@@ -222,23 +222,12 @@
 
           <div class="h-3.5 sm:h-6 w-px bg-slate-700/70 shrink-0"></div>
 
-          <!-- Rescued Cars -->
-          <div class="flex items-center gap-1 shrink-0" title="Cars Unburied from Snow">
+          <!-- Rescued Vehicles & People -->
+          <div class="flex items-center gap-1 shrink-0" title="Rescued from snow">
             <span class="inline-flex items-center justify-center w-4 h-4 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-orange-500/20 border border-orange-400/40 text-orange-300 text-[10px] sm:text-xs font-bold shrink-0">🚗</span>
             <div>
-              <div class="hidden sm:block text-[8px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Cars</div>
+              <div class="hidden sm:block text-[8px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Rescued</div>
               <div id="hud-rescued" class="font-mono-num text-[11px] sm:text-base font-bold text-orange-300 leading-tight">0</div>
-            </div>
-          </div>
-
-          <div class="h-3.5 sm:h-6 w-px bg-slate-700/70 shrink-0"></div>
-
-          <!-- Saved Cabins -->
-          <div class="flex items-center gap-1 shrink-0" title="Snowed-In Cabins Cleared">
-            <span class="inline-flex items-center justify-center w-4 h-4 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] sm:text-xs font-bold shrink-0">🏡</span>
-            <div>
-              <div class="hidden sm:block text-[8px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Cabins</div>
-              <div id="hud-cabins" class="font-mono-num text-[11px] sm:text-base font-bold text-amber-300 leading-tight">0</div>
             </div>
           </div>
 
@@ -419,42 +408,6 @@
             <button id="btn-buy-thermal" type="button" class="action-btn w-full py-2 px-3 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 font-display text-xs font-semibold flex items-center justify-between">
               <span>Expand Melt Core</span>
               <span id="upg-thermal-cost" class="font-mono-num font-bold text-amber-300">⚡ 180</span>
-            </button>
-          </div>
-
-          <!-- Upgrade 4: Studded Snow-Tracks -->
-          <div class="rounded-xl bg-slate-900/75 border border-slate-700/70 p-3 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-base">⚙️</span>
-                <div>
-                  <div class="font-display text-sm font-bold text-slate-100">Studded Snow-Tracks</div>
-                  <div id="upg-tracks-desc" class="text-[11px] text-slate-400">Grip: 100% • Anti-Slip • Vortex Resist</div>
-                </div>
-              </div>
-              <span id="upg-tracks-lvl" class="font-mono-num text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-emerald-300 border border-emerald-500/30">Lv.1</span>
-            </div>
-            <button id="btn-buy-tracks" type="button" class="action-btn w-full py-2 px-3 rounded-lg bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/50 text-emerald-200 font-display text-xs font-semibold flex items-center justify-between">
-              <span>Install Studded Cleats</span>
-              <span id="upg-tracks-cost" class="font-mono-num font-bold text-amber-300">⚡ 160</span>
-            </button>
-          </div>
-
-          <!-- Upgrade 5: Rescue Beacon Siren -->
-          <div class="rounded-xl bg-slate-900/75 border border-slate-700/70 p-3 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-base">🚨</span>
-                <div>
-                  <div class="font-display text-sm font-bold text-slate-100">Rescue Beacon Siren</div>
-                  <div id="upg-siren-desc" class="text-[11px] text-slate-400">Radar Ping: +40m • Escort Speed: +25%</div>
-                </div>
-              </div>
-              <span id="upg-siren-lvl" class="font-mono-num text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-rose-300 border border-rose-500/30">Lv.1</span>
-            </div>
-            <button id="btn-buy-siren" type="button" class="action-btn w-full py-2 px-3 rounded-lg bg-rose-500/25 hover:bg-rose-500/35 border border-rose-400/50 text-rose-200 font-display text-xs font-semibold flex items-center justify-between">
-              <span>Amplify Rescue Siren</span>
-              <span id="upg-siren-cost" class="font-mono-num font-bold text-amber-300">⚡ 200</span>
             </button>
           </div>
         </div>
@@ -644,7 +597,7 @@
       </div>
 
       <!-- Live Valley Stats Grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+      <div class="grid grid-cols-2 gap-2 text-xs">
         <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5 flex items-center gap-2">
           <span class="text-lg">⚡</span>
           <div>
@@ -662,21 +615,14 @@
         <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5 flex items-center gap-2">
           <span class="text-lg">🚗</span>
           <div>
-            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Cars Unburied</div>
+            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Rescued Cars</div>
             <div id="pause-stat-rescued" class="font-mono-num font-bold text-orange-300 text-sm">0</div>
           </div>
         </div>
         <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5 flex items-center gap-2">
-          <span class="text-lg">🏡</span>
-          <div>
-            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Cabins Saved</div>
-            <div id="pause-stat-cabins" class="font-mono-num font-bold text-amber-300 text-sm">0</div>
-          </div>
-        </div>
-        <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5 flex items-center gap-2 sm:col-span-2 sm:justify-center">
           <span class="text-lg">🏛️</span>
           <div>
-            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Safe in City Refuge</div>
+            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Safe in City</div>
             <div id="pause-stat-escorted" class="font-mono-num font-bold text-emerald-300 text-sm">0</div>
           </div>
         </div>
@@ -731,19 +677,19 @@
       <div class="grid grid-cols-2 gap-2.5 text-xs">
         <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-3">
           <div class="font-display font-bold text-amber-300 mb-0.5">🚗 & 🏡 Rescue & Escort</div>
-          <p class="text-slate-300 leading-snug">Unbury cars & cabins! Rescued vehicles & villagers head to Fjordhaven Refuge. Track them with separate <strong class="text-white">Cars & Cabins</strong> counters!</p>
+          <p class="text-slate-300 leading-snug">Unbury cars and snowed-in cabins! <strong class="text-white">Rescued vehicles and villagers run along cleared roads to Fjordhaven City</strong>. If snow blocks them, plow ahead!</p>
         </div>
         <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-3">
-          <div class="font-display font-bold text-rose-400 mb-0.5">🌪️ Hazards & Whirlwinds</div>
-          <p class="text-slate-300 leading-snug">Beware wandering <strong class="text-white">Blizzard Vortexes</strong> that redeposit snow and freeze refugees, plus slick <strong class="text-white">Black Ice</strong> patches & glacial snowbanks!</p>
+          <div class="font-display font-bold text-sky-300 mb-0.5">🌊 Flow & Abilities</div>
+          <p class="text-slate-300 leading-snug">Keep carving to build a <strong class="text-white">5.0x Flow Combo</strong>. Trigger <strong class="text-sky-200">Dash</strong> & <strong class="text-amber-200">Melt Pulse</strong>.</p>
         </div>
         <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-3">
-          <div class="font-display font-bold text-emerald-300 mb-0.5">🏎️ & 🧂 Valley Buffs</div>
-          <p class="text-slate-300 leading-snug">Grab <strong class="text-white">Nitro Boost</strong> (speed + ramming), <strong class="text-white">Salt Spreaders</strong> (prevent snow accumulation), and <strong class="text-white">Golden Wrench</strong> repair kits!</p>
+          <div class="font-display font-bold text-emerald-300 mb-0.5">🎹 Winter Synth</div>
+          <p class="text-slate-300 leading-snug">Procedural ambient pads, dynamic snow-crunch acoustics, and harmonic chimes.</p>
         </div>
         <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-3">
-          <div class="font-display font-bold text-sky-300 mb-0.5">⚙️ Workshop Upgrades</div>
-          <p class="text-slate-300 leading-snug">Install <strong class="text-white">Studded Snow-Tracks</strong> to counter black ice & vortex push, and amplify your <strong class="text-white">Rescue Beacon Siren</strong>!</p>
+          <div class="font-display font-bold text-orange-300 mb-0.5">🎮 Adaptive Controls</div>
+          <p class="text-slate-300 leading-snug"><strong class="text-white">WASD / Arrows</strong> or <strong class="text-white">Touch Joystick</strong> to steer. <strong class="text-white">Space</strong> Dash, <strong class="text-white">E</strong> Melt.</p>
         </div>
       </div>
 
@@ -876,18 +822,6 @@
           windY: 20,
           flakeCount: 165,
           frostOpacity: 0.34
-        },
-        {
-          name: 'Blinding Whiteout Squall',
-          dotColor: '#EF4444',
-          skyBg: '#7A91B0',
-          ambientTint: 'rgba(239, 68, 68, 0.12)',
-          darkness: 0.52,
-          snowRate: 0.0028,
-          windX: 110,
-          windY: 40,
-          flakeCount: 260,
-          frostOpacity: 0.54
         }
       ];
 
@@ -1153,43 +1087,6 @@
               osc.start(now);
               osc.stop(now + 0.68);
             });
-          } else if (type === 'nitro') {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(140, now);
-            osc.frequency.exponentialRampToValueAtTime(620, now + 0.45);
-            gain.gain.setValueAtTime(0.18, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-            osc.connect(gain);
-            gain.connect(this.master);
-            osc.start(now);
-            osc.stop(now + 0.58);
-          } else if (type === 'buff') {
-            [329.63, 440.0, 554.37, 659.25].forEach((f, i) => {
-              const osc = this.ctx.createOscillator();
-              const gain = this.ctx.createGain();
-              osc.type = 'triangle';
-              osc.frequency.setValueAtTime(f, now + i * 0.05);
-              gain.gain.setValueAtTime(0.15, now + i * 0.05);
-              gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.45);
-              osc.connect(gain);
-              gain.connect(this.master);
-              osc.start(now + i * 0.05);
-              osc.stop(now + i * 0.05 + 0.48);
-            });
-          } else if (type === 'hazard') {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(220, now);
-            osc.frequency.linearRampToValueAtTime(110, now + 0.35);
-            gain.gain.setValueAtTime(0.14, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-            osc.connect(gain);
-            gain.connect(this.master);
-            osc.start(now);
-            osc.stop(now + 0.42);
           }
         }
       }
@@ -1416,7 +1313,7 @@
               active: false,
               heatTimer: 0
             });
-          } else if (poiRoll < 0.88) {
+          } else if (poiRoll < 0.92) {
             // Supply Crate
             pois.push({
               id: 'crate_' + cx + '_' + cy,
@@ -1425,91 +1322,8 @@
               wy: py,
               collected: false
             });
-          } else if (poiRoll < 0.92) {
-            // Nitro Boost Canister (🏎️)
-            pois.push({
-              id: 'nitro_' + cx + '_' + cy,
-              type: 'nitro',
-              wx: px,
-              wy: py,
-              collected: false,
-              bobPhase: hash2D(cx, cy, 911) * Math.PI * 2
-            });
-          } else if (poiRoll < 0.95) {
-            // De-Icing Salt Spreader Keg (🧂)
-            pois.push({
-              id: 'salt_' + cx + '_' + cy,
-              type: 'salt',
-              wx: px,
-              wy: py,
-              collected: false,
-              bobPhase: hash2D(cx, cy, 912) * Math.PI * 2
-            });
-          } else if (poiRoll < 0.97) {
-            // Emergency Wrench Kit (🔧)
-            pois.push({
-              id: 'wrench_' + cx + '_' + cy,
-              type: 'wrench',
-              wx: px,
-              wy: py,
-              collected: false,
-              spinPhase: 0
-            });
-          } else {
-            // Hot Spiced Cider Station (☕)
-            pois.push({
-              id: 'cider_' + cx + '_' + cy,
-              type: 'cider',
-              wx: px,
-              wy: py,
-              collected: false
-            });
-          }
-
-          // Procedural Road Hazards in Chunk: Black Ice Slicks & Glacial Snowbanks
-          const hazardRoll = hash2D(cx, cy, 933);
-          const hpx = (baseGx + 3 + Math.floor(hash2D(cx, cy, 934) * (CHUNK_DIM - 6)) + 0.5) * CELL_SIZE;
-          const hpy = (baseGy + 3 + Math.floor(hash2D(cx, cy, 935) * (CHUNK_DIM - 6)) + 0.5) * CELL_SIZE;
-          const hCell = getCellAtWorld(hpx, hpy);
-
-          if (hazardRoll < 0.28 && hCell && hCell.sub === SUB_ASPHALT) {
-            // Black Ice Hazard on Road
-            pois.push({
-              id: 'blackice_' + cx + '_' + cy,
-              type: 'black_ice',
-              wx: hpx,
-              wy: hpy,
-              radius: 22
-            });
-          } else if (hazardRoll > 0.76 && hCell && hCell.sub !== SUB_ICE) {
-            // Compact Glacial Snowbank / Ice Dam blocking path
-            pois.push({
-              id: 'snowbank_' + cx + '_' + cy,
-              type: 'snowbank',
-              wx: hpx,
-              wy: hpy,
-              health: 3,
-              cleared: false
-            });
           }
         } else {
-          // Guaranteed spawn items near origin
-          pois.push({
-            id: 'nitro_spawn',
-            type: 'nitro',
-            wx: -3.5 * CELL_SIZE,
-            wy: -4.5 * CELL_SIZE,
-            collected: false,
-            bobPhase: 0
-          });
-          pois.push({
-            id: 'salt_spawn',
-            type: 'salt',
-            wx: 4.5 * CELL_SIZE,
-            wy: -3.5 * CELL_SIZE,
-            collected: false,
-            bobPhase: 1.5
-          });
           // Guarantee one nearby Trapped Vehicle & one Crystal near spawn chunk so player immediately experiences POIs!
           pois.push({
             id: 'car_spawn',
@@ -1660,8 +1474,6 @@
         credits: 80,
         totalAreaCleared: 0,
         rescuedCount: 0,
-        rescuedCars: 0,
-        savedCabins: 0,
         escortedCount: 0,
         stormLevel: 1,
         weatherIndex: 0,
@@ -1673,31 +1485,16 @@
         mouseWorldY: 0,
         mouseActive: false,
 
-        // Buff Timers & Debuff Flags
-        nitroTimer: 0,
-        saltTimer: 0,
-        onBlackIceTimer: 0,
-
-        // Wandering Blizzard Whirlwinds / Polar Vortices
-        vortices: [
-          { wx: 140, wy: -160, vx: 16, vy: 14, spin: 0, radius: 42, active: true },
-          { wx: -190, wy: 130, vx: -14, vy: 16, spin: 0, radius: 46, active: true },
-          { wx: 260, wy: 210, vx: -15, vy: -14, spin: 0, radius: 44, active: true },
-          { wx: -280, wy: -180, vx: 18, vy: -12, spin: 0, radius: 40, active: true }
-        ],
-
         // Flow Combo
         flow: 1.0,
         flowProgress: 0,
         flowDecayTimer: 0,
 
-        // Upgrades (Now with Studded Tracks & Beacon Siren)
+        // Upgrades
         upgrades: {
           blade: 1,
           engine: 1,
-          thermal: 1,
-          tracks: 1,
-          siren: 1
+          thermal: 1
         },
         liveryIndex: 0,
         unlockedLiveries: [0],
@@ -1742,16 +1539,11 @@
           if (typeof saved.credits === 'number') state.credits = saved.credits;
           if (typeof saved.totalAreaCleared === 'number') state.totalAreaCleared = saved.totalAreaCleared;
           if (typeof saved.rescuedCount === 'number') state.rescuedCount = saved.rescuedCount;
-          if (typeof saved.rescuedCars === 'number') state.rescuedCars = saved.rescuedCars;
-          else state.rescuedCars = state.rescuedCount || 0;
-          if (typeof saved.savedCabins === 'number') state.savedCabins = saved.savedCabins;
           if (typeof saved.escortedCount === 'number') state.escortedCount = saved.escortedCount;
           if (saved.upgrades) {
             state.upgrades.blade = Math.min(6, Math.max(1, saved.upgrades.blade || 1));
             state.upgrades.engine = Math.min(6, Math.max(1, saved.upgrades.engine || 1));
             state.upgrades.thermal = Math.min(6, Math.max(1, saved.upgrades.thermal || 1));
-            state.upgrades.tracks = Math.min(6, Math.max(1, saved.upgrades.tracks || 1));
-            state.upgrades.siren = Math.min(6, Math.max(1, saved.upgrades.siren || 1));
           }
           if (typeof saved.liveryIndex === 'number') {
             state.liveryIndex = saved.liveryIndex % LIVERIES.length;
@@ -1772,8 +1564,6 @@
             credits: Math.floor(state.credits),
             totalAreaCleared: Math.floor(state.totalAreaCleared),
             rescuedCount: state.rescuedCount,
-            rescuedCars: state.rescuedCars,
-            savedCabins: state.savedCabins,
             escortedCount: state.escortedCount,
             upgrades: state.upgrades,
             liveryIndex: state.liveryIndex,
@@ -1811,9 +1601,9 @@
       }
 
       function getUpgradeCost(track) {
-        const lvl = state.upgrades[track] || 1;
+        const lvl = state.upgrades[track];
         if (lvl >= 6) return Infinity;
-        const base = track === 'blade' ? 120 : track === 'engine' ? 150 : track === 'thermal' ? 180 : track === 'tracks' ? 160 : 200;
+        const base = track === 'blade' ? 120 : track === 'engine' ? 150 : 180;
         return Math.round(base * Math.pow(1.65, lvl - 1));
       }
 
@@ -1822,21 +1612,6 @@
       // =========================================================================
       const canvas = document.getElementById('game-canvas');
       const ctx = canvas.getContext('2d');
-      if (ctx && !ctx.roundRect) {
-        ctx.roundRect = function (x, y, w, h, radii) {
-          let r = radii || 0;
-          if (Array.isArray(r)) r = r[0] || 0;
-          if (typeof r !== 'number') r = 0;
-          r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
-          this.moveTo(x + r, y);
-          this.arcTo(x + w, y, x + w, y + h, r);
-          this.arcTo(x + w, y + h, x, y + h, r);
-          this.arcTo(x, y + h, x, y, r);
-          this.arcTo(x, y, x + w, y, r);
-          this.closePath();
-          return this;
-        };
-      }
       let viewW = window.innerWidth;
       let viewH = window.innerHeight;
       let dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -2201,28 +1976,13 @@
         triggerHaptic(15);
         audio.playChime('horn');
 
-        const hornRange = 170 + ((state.upgrades.siren || 1) - 1) * 45;
         state.shockwaves.push({
           wx: state.plow.wx,
           wy: state.plow.wy,
           radius: 10,
-          maxRadius: hornRange,
+          maxRadius: 170,
           color: '#38BDF8',
           alpha: 0.85
-        });
-
-        // Foghorn rallies blocked vehicles and citizens in range
-        chunks.forEach((chunk) => {
-          chunk.pois.forEach((poi) => {
-            if ((poi.type === 'vehicle' || poi.type === 'citizen') && poi.status === 'blocked') {
-              const d = Math.hypot(poi.wx - state.plow.wx, poi.wy - state.plow.wy);
-              if (d < hornRange) {
-                poi.speechText = 'Heard foghorn! Plowing path!';
-                poi.speechTimer = 3.0;
-                poi.hornCooldown = 0;
-              }
-            }
-          });
         });
 
         // Find blocked vehicles or nearest trapped vehicles/POIs
@@ -2291,37 +2051,6 @@
 
         let snowCarvedThisFrame = 0;
         let encounteredResistance = 0;
-
-        // 0. Active Salt Spreader De-Icing (Vaporizes snow and prevents refreeze)
-        if (state.saltTimer > 0) {
-          const sRad = 38;
-          const sGx = Math.floor(plow.wx / CELL_SIZE);
-          const sGy = Math.floor(plow.wy / CELL_SIZE);
-          for (let dy = -2; dy <= 2; dy++) {
-            for (let dx = -2; dx <= 2; dx++) {
-              const sc = getCellAtGrid(sGx + dx, sGy + dy);
-              if (sc) {
-                sc.snow = 0;
-                sc.berm = 0;
-                sc.saltedUntil = (sc.saltedUntil || 0) + dt * 2.5;
-              }
-            }
-          }
-          if (Math.random() < 0.4) {
-            state.particles.push({
-              wx: plow.wx + (Math.random() - 0.5) * 20,
-              wy: plow.wy + (Math.random() - 0.5) * 20,
-              wz: 2,
-              vx: (Math.random() - 0.5) * 30,
-              vy: (Math.random() - 0.5) * 30,
-              vz: 12 + Math.random() * 20,
-              size: 2.2,
-              color: '#E0F2FE',
-              life: 0.4,
-              maxLife: 0.4
-            });
-          }
-        }
 
         // 1. Blade sweep: snow is completely removed (disappears into powder particles, NO berm dumping)
         const sampleSteps = 7;
@@ -2521,100 +2250,6 @@
                   showToast('📦', `Supply Crate Opened! 10s Wide-Blade Overdrive (+${reward} ⚡)`);
                   saveProgress();
                 }
-              } else if (poi.type === 'nitro' && !poi.collected) {
-                poi.bobPhase += dt * 3.5;
-                if (distToPlow < getBladeRadius() + 22) {
-                  poi.collected = true;
-                  state.nitroTimer = 7.0;
-                  state.credits += 100;
-                  boostFlow(1.0);
-                  audio.playChime('nitro');
-                  camera.shake = 8.0;
-                  spawnFloatingText(poi.wx, poi.wy, `+100 ⚡ NITRO HYPER-THRUST! 🏎️`, '#EF4444');
-                  showToast('🏎️', 'Nitro Boost Active! +85% Speed & Full Snow Ramming Power!');
-                  saveProgress();
-                }
-              } else if (poi.type === 'salt' && !poi.collected) {
-                poi.bobPhase += dt * 2.8;
-                if (distToPlow < getBladeRadius() + 22) {
-                  poi.collected = true;
-                  state.saltTimer = 14.0;
-                  state.credits += 100;
-                  boostFlow(0.8);
-                  audio.playChime('buff');
-                  spawnFloatingText(poi.wx, poi.wy, `+100 ⚡ DE-ICING SALT SPREADER! 🧂`, '#38BDF8');
-                  showToast('🧂', 'De-Icing Salt Active! Melting snow and preventing drifts!');
-                  saveProgress();
-                }
-              } else if (poi.type === 'wrench' && !poi.collected) {
-                poi.spinPhase = (poi.spinPhase || 0) + dt * 4;
-                if (distToPlow < getBladeRadius() + 22) {
-                  poi.collected = true;
-                  state.plow.dashCooldown = 0;
-                  state.plow.pulseCooldown = 0;
-                  state.credits += 150;
-                  boostFlow(1.0);
-                  audio.playChime('upgrade');
-                  spawnFloatingText(poi.wx, poi.wy, `+150 ⚡ EMERGENCY REPAIR KIT! 🔧`, '#FBBF24');
-                  showToast('🔧', 'Emergency Kit! Dash & Melt Pulse Instant Reset (+150 ⚡)');
-                  saveProgress();
-                }
-              } else if (poi.type === 'cider' && !poi.collected) {
-                if (distToPlow < getBladeRadius() + 22) {
-                  poi.collected = true;
-                  state.flow = 5.0;
-                  state.flowProgress = 1.0;
-                  state.flowDecayTimer = 8.0;
-                  state.credits += 80;
-                  audio.playChime('buff');
-                  spawnFloatingText(poi.wx, poi.wy, `+80 ⚡ 5.0x FLOW! SPICED CIDER! ☕`, '#F59E0B');
-                  showToast('☕', 'Hot Spiced Cider! Max Flow Combo 5.0x Locked!');
-                  saveProgress();
-                }
-              } else if (poi.type === 'black_ice') {
-                if (distToPlow < poi.radius + 14) {
-                  state.onBlackIceTimer = 1.2;
-                  if (Math.random() < 0.1) {
-                    audio.playChime('hazard');
-                  }
-                }
-              } else if (poi.type === 'snowbank' && !poi.cleared) {
-                if (distToPlow < getBladeRadius() + 18) {
-                  const canShatter = (state.nitroTimer > 0) || (state.plow.dashTimer > 0) || (state.upgrades.engine >= 3 && state.plow.speed > 80);
-                  if (canShatter) {
-                    poi.cleared = true;
-                    state.credits += 80;
-                    camera.shake = 9.0;
-                    audio.playChime('crystal');
-                    spawnFloatingText(poi.wx, poi.wy, `+80 ⚡ GLACIAL BANK SHATTERED! ❄️`, '#BAE6FD');
-                    showToast('❄️', 'Compact Snowbank Smashed! Path Cleared (+80 ⚡)');
-                    for (let s = 0; s < 22; s++) {
-                      const ang = Math.random() * Math.PI * 2;
-                      const spd = 60 + Math.random() * 90;
-                      state.particles.push({
-                        wx: poi.wx,
-                        wy: poi.wy,
-                        wz: 8,
-                        vx: Math.cos(ang) * spd,
-                        vy: Math.sin(ang) * spd,
-                        vz: 40 + Math.random() * 50,
-                        size: 4 + Math.random() * 3,
-                        color: s % 2 === 0 ? '#E0F2FE' : '#93C5FD',
-                        life: 0.6,
-                        maxLife: 0.6
-                      });
-                    }
-                    saveProgress();
-                  } else {
-                    // Impede vehicle
-                    state.plow.speed *= 0.35;
-                    state.plow.vx *= 0.35;
-                    state.plow.vy *= 0.35;
-                    if (Math.random() < 0.2) {
-                      showToast('⚠️', 'Glacial Snowbank is too dense! Use Dash 🚀 or Nitro 🏎️ to smash!');
-                    }
-                  }
-                }
               } else if (poi.type === 'vent') {
                 // Check snow level on the vent cell
                 const ventCell = getCellAtWorld(poi.wx, poi.wy);
@@ -2652,8 +2287,7 @@
                   poi.snowBurial = Math.min(1.0, totalSnow / 5.0);
                   if (poi.snowBurial < 0.20) {
                     poi.status = 'moving';
-                    state.rescuedCars = (state.rescuedCars || 0) + 1;
-                    state.rescuedCount = state.rescuedCars;
+                    state.rescuedCount += 1;
                     const reward = Math.round(150 * state.flow);
                     state.credits += reward;
                     boostFlow(1.0);
@@ -2724,8 +2358,7 @@
                         while (diff > Math.PI) diff -= Math.PI * 2;
                         poi.angle += diff * Math.min(1, 4.8 * dt);
 
-                        const sirenBonus = ((state.upgrades.siren || 1) - 1) * 9;
-                        poi.speed = Math.min(48 + sirenBonus, poi.speed + (65 + sirenBonus * 0.8) * dt);
+                        poi.speed = Math.min(48, poi.speed + 65 * dt);
                         poi.wx += Math.cos(poi.angle) * poi.speed * dt;
                         poi.wy += Math.sin(poi.angle) * poi.speed * dt;
 
@@ -2801,8 +2434,7 @@
                       while (diff > Math.PI) diff -= Math.PI * 2;
                       poi.angle += diff * Math.min(1, 6.0 * dt);
 
-                      const sirenBonus = ((state.upgrades.siren || 1) - 1) * 7;
-                      poi.speed = Math.min(34 + sirenBonus, poi.speed + (70 + sirenBonus * 0.8) * dt);
+                      poi.speed = Math.min(34, poi.speed + 70 * dt);
                       poi.wx += Math.cos(poi.angle) * poi.speed * dt;
                       poi.wy += Math.sin(poi.angle) * poi.speed * dt;
                       poi.walkAnimTimer += dt * 11;
@@ -2830,7 +2462,7 @@
                 poi.clearedProgress = Math.max(0, 1 - deckSnow / 5.5);
                 if (poi.clearedProgress > 0.78) {
                   poi.completed = true;
-                  state.savedCabins = (state.savedCabins || 0) + 1;
+                  state.rescuedCount += 1;
                   const reward = Math.round(200 * state.flow);
                   state.credits += reward;
                   boostFlow(0.9);
@@ -2909,50 +2541,10 @@
           }
         }
 
-        // Update active buff timers
-        if (state.nitroTimer > 0) {
-          state.nitroTimer = Math.max(0, state.nitroTimer - dt);
-          // Blazing nitro exhaust particles
-          if (Math.random() < 0.6) {
-            const spread = (Math.random() - 0.5) * 0.6;
-            const ang = plow.angle + Math.PI + spread;
-            state.particles.push({
-              wx: plow.wx - Math.cos(plow.angle) * 16,
-              wy: plow.wy - Math.sin(plow.angle) * 16,
-              wz: 6,
-              vx: Math.cos(ang) * 90,
-              vy: Math.sin(ang) * 90,
-              vz: 25 + Math.random() * 30,
-              size: 4 + Math.random() * 3,
-              color: Math.random() > 0.4 ? '#EF4444' : '#F59E0B',
-              life: 0.35,
-              maxLife: 0.35
-            });
-          }
-        }
-        if (state.saltTimer > 0) {
-          state.saltTimer = Math.max(0, state.saltTimer - dt);
-        }
-        if (state.onBlackIceTimer > 0) {
-          state.onBlackIceTimer = Math.max(0, state.onBlackIceTimer - dt);
-        }
-
-        // Steering & Surface Traction Physics with Studded Tracks upgrade
-        const tracksLvl = state.upgrades.tracks || 1;
-        const tracksBonus = (tracksLvl - 1) * 0.9;
+        // Steering & Surface Traction Physics
         const isIce = plow.currentSubstrate === SUB_ICE;
-
-        let turnRate = isIce ? (3.4 + tracksBonus * 0.3) : 5.4;
-        let grip = isIce ? (2.2 + tracksBonus) : (6.8 + tracksBonus * 0.4);
-
-        if (state.onBlackIceTimer > 0) {
-          if (tracksLvl < 4) {
-            grip = 0.5; // Slippery spinout on black ice!
-            turnRate = 1.9;
-          } else {
-            grip = 5.2; // Studded cleats bite into black ice!
-          }
-        }
+        const turnRate = isIce ? 3.4 : 5.4;
+        const grip = isIce ? 2.2 : 6.8;
 
         if (steer.active) {
           const desiredAngle = Math.atan2(steer.wy, steer.wx);
@@ -2965,11 +2557,10 @@
         // Carve snow & compute snow resistance
         const { snowCarvedThisFrame, encounteredResistance } = performSnowPlowing(dt);
 
-        // Calculate target velocity (Nitro boosts speed by +85% and ignores snow resistance)
-        const isNitro = state.nitroTimer > 0;
-        const maxSpd = getMaxSpeed() * (isNitro ? 1.85 : (plow.dashTimer > 0 ? 1.85 : 1.0));
-        const resistanceFactor = (isNitro || plow.dashTimer > 0) ? 1.0 : Math.max(0.52, 1.0 - encounteredResistance * 0.045 / (1 + (state.upgrades.engine - 1) * 0.18 + tracksBonus * 0.1));
-        const targetSpeed = (steer.active ? steer.throttle : (isNitro || plow.dashTimer > 0 ? 1.0 : 0)) * maxSpd * resistanceFactor;
+        // Calculate target velocity
+        const maxSpd = getMaxSpeed() * (plow.dashTimer > 0 ? 1.85 : 1.0);
+        const resistanceFactor = plow.dashTimer > 0 ? 1.0 : Math.max(0.52, 1.0 - encounteredResistance * 0.045 / (1 + (state.upgrades.engine - 1) * 0.18));
+        const targetSpeed = (steer.active ? steer.throttle : (plow.dashTimer > 0 ? 1.0 : 0)) * maxSpd * resistanceFactor;
 
         const desiredVx = Math.cos(plow.angle) * targetSpeed;
         const desiredVy = Math.sin(plow.angle) * targetSpeed;
@@ -3002,107 +2593,6 @@
         if (camera.shake > 0) {
           camera.shake = Math.max(0, camera.shake - dt * 22);
         }
-
-        // Update Wandering Blizzard Whirlwinds / Polar Vortices
-        state.vortices.forEach((v) => {
-          if (!v.active) return;
-          v.spin += dt * 8.5;
-          v.wx += v.vx * dt;
-          v.wy += v.vy * dt;
-
-          // Soft boundary reflection relative to player to keep whirlwinds in view
-          const dToCam = Math.hypot(v.wx - camera.wx, v.wy - camera.wy);
-          if (dToCam > 520) {
-            const reAng = Math.atan2(camera.wy - v.wy, camera.wx - v.wx) + (Math.random() - 0.5) * 0.6;
-            const spd = 14 + Math.random() * 10;
-            v.vx = Math.cos(reAng) * spd;
-            v.vy = Math.sin(reAng) * spd;
-          }
-
-          // Whirlwind deposits snow back on cleared terrain (unless salted or inside city)
-          const vCell = getCellAtWorld(v.wx, v.wy);
-          const dCityV = Math.hypot(v.wx - CITY_X, v.wy - CITY_Y);
-          if (vCell && vCell.sub !== SUB_ICE && dCityV > CITY_RADIUS + 20 && (!vCell.saltedUntil || vCell.saltedUntil <= 0)) {
-            vCell.snow = Math.min(1.15, vCell.snow + dt * 0.35);
-          }
-
-          // Spawn swirling vortex snow particles
-          if (Math.random() < 0.45) {
-            const pAng = v.spin + Math.random() * Math.PI * 2;
-            const pRad = 6 + Math.random() * (v.radius * 0.75);
-            state.particles.push({
-              wx: v.wx + Math.cos(pAng) * pRad,
-              wy: v.wy + Math.sin(pAng) * pRad,
-              wz: 4 + Math.random() * 24,
-              vx: -Math.sin(pAng) * (45 + Math.random() * 35),
-              vy: Math.cos(pAng) * (45 + Math.random() * 35),
-              vz: 25 + Math.random() * 35,
-              size: 2.5 + Math.random() * 2.5,
-              color: Math.random() > 0.3 ? '#E0F2FE' : '#BAE6FD',
-              life: 0.45,
-              maxLife: 0.45
-            });
-          }
-
-          // Interaction with Player Plow
-          const dToPlow = Math.hypot(v.wx - plow.wx, v.wy - plow.wy);
-          if (dToPlow < v.radius + 16) {
-            // Can player dispel vortex?
-            if (state.nitroTimer > 0 || plow.dashTimer > 0) {
-              v.active = false;
-              state.credits += 120;
-              camera.shake = 10.0;
-              audio.playChime('crystal');
-              spawnFloatingText(v.wx, v.wy, '+120 ⚡ VORTEX DISPELLED! 🌪️', '#38BDF8');
-              showToast('🌪️', 'Blizzard Vortex Shattered by Plow Thrust! (+120 ⚡)');
-              for (let vp = 0; vp < 26; vp++) {
-                const ang = Math.random() * Math.PI * 2;
-                state.particles.push({
-                  wx: v.wx,
-                  wy: v.wy,
-                  wz: 12,
-                  vx: Math.cos(ang) * 90,
-                  vy: Math.sin(ang) * 90,
-                  vz: 50 + Math.random() * 40,
-                  size: 3.5,
-                  color: '#BAE6FD',
-                  life: 0.6,
-                  maxLife: 0.6
-                });
-              }
-              // Respawn far away after delay
-              setTimeout(() => {
-                v.active = true;
-                v.wx = camera.wx + (Math.random() - 0.5) * 800;
-                v.wy = camera.wy + (Math.random() - 0.5) * 800;
-              }, 25000);
-            } else {
-              // Wind force pushes plow
-              const pushFactor = Math.max(0.2, 1.0 - ((state.upgrades.tracks || 1) - 1) * 0.16);
-              const pushAng = Math.atan2(plow.wy - v.wy, plow.wx - v.wx);
-              plow.vx += Math.cos(pushAng) * 65 * pushFactor * dt;
-              plow.vy += Math.sin(pushAng) * 65 * pushFactor * dt;
-              camera.shake = Math.max(camera.shake, 5.0);
-              // Chills engine
-              plow.dashCooldown = Math.min(getDashMaxCooldown(), plow.dashCooldown + dt * 0.7);
-            }
-          }
-
-          // Interaction with Escorted Vehicles & Citizens: Vortex freezes / blocks them!
-          chunks.forEach((chunk) => {
-            chunk.pois.forEach((poi) => {
-              if ((poi.type === 'vehicle' || poi.type === 'citizen') && (poi.status === 'moving')) {
-                const dToEntity = Math.hypot(v.wx - poi.wx, v.wy - poi.wy);
-                if (dToEntity < v.radius + 12) {
-                  poi.status = 'blocked';
-                  poi.speechText = 'Vortex freezing us! Help!';
-                  poi.speechTimer = 3.5;
-                  poi.speed = 0;
-                }
-              }
-            });
-          });
-        });
 
         // Update chunks & POIs
         updateActiveChunksAndPOIs(dt);
@@ -3224,8 +2714,8 @@
         // 3. Render Radial Melt Pulse & Horn Shockwaves
         state.shockwaves.forEach((sw) => {
           const center = worldToScreen(sw.wx, sw.wy, 4);
-          const rx = Math.max(0.1, sw.radius * ISO_COS * 1.15);
-          const ry = Math.max(0.1, sw.radius * ISO_SIN * 1.15);
+          const rx = sw.radius * ISO_COS * 1.15;
+          const ry = sw.radius * ISO_SIN * 1.15;
           ctx.save();
           ctx.strokeStyle = sw.color;
           ctx.globalAlpha = Math.max(0, sw.alpha);
@@ -3274,16 +2764,6 @@
           }
         }
 
-        // Active Blizzard Vortices
-        state.vortices.forEach((v) => {
-          if (!v.active) return;
-          renderables.push({
-            depth: v.wx + v.wy,
-            kind: 'vortex',
-            data: v
-          });
-        });
-
         // Player Plow
         renderables.push({
           depth: state.plow.wx + state.plow.wy,
@@ -3311,20 +2791,6 @@
             drawRescuedCitizen(item.data);
           } else if (item.kind === 'city_refuge') {
             drawCityRefuge(item.data);
-          } else if (item.kind === 'nitro') {
-            drawNitroCanister(item.data);
-          } else if (item.kind === 'salt') {
-            drawSaltKeg(item.data);
-          } else if (item.kind === 'wrench') {
-            drawGoldenWrench(item.data);
-          } else if (item.kind === 'cider') {
-            drawCiderJug(item.data);
-          } else if (item.kind === 'black_ice') {
-            drawBlackIceSlick(item.data);
-          } else if (item.kind === 'snowbank') {
-            drawGlacialSnowbank(item.data);
-          } else if (item.kind === 'vortex') {
-            drawBlizzardVortex(item.data);
           } else if (item.kind === 'plow') {
             drawLowPolySnowPlow(item.data);
           }
@@ -3337,7 +2803,7 @@
           ctx.fillStyle = pt.color;
           ctx.globalAlpha = alpha;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, Math.max(0.1, pt.size * (0.5 + 0.5 * alpha)), 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, pt.size * (0.5 + 0.5 * alpha), 0, Math.PI * 2);
           ctx.fill();
         });
         ctx.globalAlpha = 1.0;
@@ -3657,7 +3123,7 @@
             const h = car.snowBurial * 14;
             ctx.fillStyle = '#F4F8FB';
             ctx.beginPath();
-            ctx.ellipse(p.x, p.y - 1, Math.max(0.1, 16 * car.snowBurial), Math.max(0.1, h * 0.65), 0, Math.PI, Math.PI * 2);
+            ctx.ellipse(p.x, p.y - 1, 16 * car.snowBurial, h * 0.65, 0, Math.PI, Math.PI * 2);
             ctx.fill();
 
             // Burial clearing progress bar
@@ -3851,15 +3317,16 @@
         ctx.roundRect(p.x - 32, p.y - 46, 64, 40, 5);
         ctx.fill();
 
-        // Chimneys puffing warm smoke (guaranteed positive radius)
+        // Chimneys puffing warm smoke
         [-20, 20].forEach((cxOff) => {
           ctx.fillStyle = '#4A2810';
           ctx.fillRect(p.x + cxOff - 3, p.y - 68, 6, 18);
-          const smokeRise = (((performance.now() * 0.02 + (cxOff + 50) * 7) % 20) + 20) % 20;
-          const smokeRadius = Math.max(0.5, 2.5 + smokeRise * 0.25);
+          // Smoke puff
+          // JavaScript remainder can be negative for the left chimney.
+          const smokeRise = ((performance.now() * 0.02 + cxOff * 10) % 20 + 20) % 20;
           ctx.fillStyle = 'rgba(241, 245, 249, 0.55)';
           ctx.beginPath();
-          ctx.arc(p.x + cxOff + Math.sin(smokeRise * 0.2) * 4, p.y - 72 - smokeRise, smokeRadius, 0, Math.PI * 2);
+          ctx.arc(p.x + cxOff + Math.sin(smokeRise * 0.2) * 4, p.y - 72 - smokeRise, 3.5 + smokeRise * 0.2, 0, Math.PI * 2);
           ctx.fill();
         });
 
@@ -3927,15 +3394,15 @@
         ctx.ellipse(p.x - 42, p.y + 12, 16, 9, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Blazing Fire Core (guaranteed positive radius)
+        // Blazing Fire Core
         const fireFlicker = Math.sin(performance.now() * 0.015) * 2;
         ctx.fillStyle = '#F59E0B';
         ctx.beginPath();
-        ctx.ellipse(p.x - 42, p.y + 11, Math.max(1, 10 + fireFlicker), Math.max(0.5, 5 + fireFlicker * 0.5), 0, 0, Math.PI * 2);
+        ctx.ellipse(p.x - 42, p.y + 11, 10 + fireFlicker, 5 + fireFlicker * 0.5, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#FEF08A';
         ctx.beginPath();
-        ctx.arc(p.x - 42, p.y + 9, Math.max(0.5, 4 + fireFlicker * 0.5), 0, Math.PI * 2);
+        ctx.arc(p.x - 42, p.y + 9, 4 + fireFlicker * 0.5, 0, Math.PI * 2);
         ctx.fill();
 
         // Wooden Benches around fire pit
@@ -4066,7 +3533,7 @@
         ctx.fill();
 
         if (vent.active) {
-          const pulseR = Math.max(1, 18 + Math.sin(performance.now() * 0.006) * 6);
+          const pulseR = 18 + Math.sin(performance.now() * 0.006) * 6;
           ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
           ctx.lineWidth = 2;
           ctx.beginPath();
@@ -4269,35 +3736,6 @@
           ctx.restore();
         }
 
-        // 1.5 Wandering Blizzard Vortices Beacons (Danger Indicator)
-        state.vortices.forEach((v) => {
-          if (!v.active) return;
-          const dist = Math.hypot(v.wx - state.plow.wx, v.wy - state.plow.wy);
-          if (dist > 650) return;
-          const scr = worldToScreen(v.wx, v.wy, 15);
-          if (scr.x >= 30 && scr.x <= viewW - 30 && scr.y >= 30 && scr.y <= viewH - 30) return;
-
-          const ang = Math.atan2(scr.y - viewH * 0.5, scr.x - viewW * 0.5);
-          const rx = Math.max(margin, Math.min(viewW - margin, viewW * 0.5 + Math.cos(ang) * (viewW * 0.42)));
-          const ry = Math.max(margin + 30, Math.min(viewH - margin - 30, viewH * 0.5 + Math.sin(ang) * (viewH * 0.38)));
-
-          ctx.save();
-          ctx.translate(rx, ry);
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-          ctx.strokeStyle = '#EF4444';
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.arc(0, 0, 14, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.font = '12px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('🌪️', 0, 1);
-          ctx.restore();
-        });
-
         // 2. POIs and Vehicles
         chunks.forEach((chunk) => {
           chunk.pois.forEach((poi) => {
@@ -4334,7 +3772,7 @@
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const icon = isBlocked ? (poi.type === 'citizen' ? '🥶' : '⚠️') : (poi.type === 'citizen' ? '🏃' : (poi.type === 'vehicle' ? '🚗' : (poi.type === 'crystal' ? '💎' : (poi.type === 'crate' ? '📦' : (poi.type === 'nitro' ? '🏎️' : (poi.type === 'salt' ? '🧂' : (poi.type === 'wrench' ? '🔧' : (poi.type === 'cider' ? '☕' : (poi.type === 'snowbank' ? '❄️' : (poi.type === 'vent' ? '🌋' : '🏡'))))))))));
+            const icon = isBlocked ? (poi.type === 'citizen' ? '🥶' : '⚠️') : (poi.type === 'citizen' ? '🏃' : (poi.type === 'vehicle' ? '🚗' : (poi.type === 'crystal' ? '💎' : (poi.type === 'crate' ? '📦' : (poi.type === 'vent' ? '🌋' : '🏡')))));
             ctx.fillText(icon, 0, 1);
             ctx.restore();
           });
@@ -4372,9 +3810,7 @@
       function syncHUD() {
         document.getElementById('hud-credits').textContent = Math.floor(state.credits).toLocaleString();
         document.getElementById('hud-area').textContent = Math.floor(state.totalAreaCleared).toLocaleString();
-        document.getElementById('hud-rescued').textContent = String(state.rescuedCars || state.rescuedCount || 0);
-        const cabinsEl = document.getElementById('hud-cabins');
-        if (cabinsEl) cabinsEl.textContent = String(state.savedCabins || 0);
+        document.getElementById('hud-rescued').textContent = String(state.rescuedCount);
         const escortedEl = document.getElementById('hud-escorted');
         if (escortedEl) escortedEl.textContent = String(state.escortedCount);
 
@@ -4398,13 +3834,7 @@
         document.getElementById('pulse-cd-ring').style.strokeDashoffset = String((182.2 * pulseRatio).toFixed(1));
 
         // Workshop notification badge
-        const minCost = Math.min(
-          getUpgradeCost('blade'),
-          getUpgradeCost('engine'),
-          getUpgradeCost('thermal'),
-          getUpgradeCost('tracks'),
-          getUpgradeCost('siren')
-        );
+        const minCost = Math.min(getUpgradeCost('blade'), getUpgradeCost('engine'), getUpgradeCost('thermal'));
         const badge = document.getElementById('workshop-badge');
         const wsBtn = document.getElementById('btn-workshop');
         if (state.credits >= minCost) {
@@ -4421,8 +3851,6 @@
         updateUpgradeCard('blade', `Width: ${(2.8 + state.upgrades.blade * 0.55).toFixed(1)}m • Throw: Lv.${state.upgrades.blade}`);
         updateUpgradeCard('engine', `Torque: ${85 + state.upgrades.engine * 15}% • Dash CD: ${getDashMaxCooldown().toFixed(1)}s`);
         updateUpgradeCard('thermal', `Pulse: ${getPulseRadius()}m • Aura: ${state.upgrades.thermal > 1 ? 'Active' : 'Off'}`);
-        updateUpgradeCard('tracks', `Grip: ${100 + ((state.upgrades.tracks || 1) - 1) * 30}% • Anti-Slip Lv.${state.upgrades.tracks || 1}`);
-        updateUpgradeCard('siren', `Radar: +${((state.upgrades.siren || 1) - 1) * 45}m • Escort Spd: +${((state.upgrades.siren || 1) - 1) * 25}%`);
       }
 
       function updateUpgradeCard(track, descText) {
@@ -4455,7 +3883,7 @@
         state.credits -= cost;
         state.upgrades[track] += 1;
         audio.playChime('upgrade');
-        const label = track === 'blade' ? 'V-Blade Span' : track === 'engine' ? 'Turbine Thrust' : track === 'thermal' ? 'Thermal Melt Core' : track === 'tracks' ? 'Studded Snow-Tracks' : 'Rescue Beacon Siren';
+        const label = track === 'blade' ? 'V-Blade Span' : track === 'engine' ? 'Turbine Thrust' : 'Thermal Melt Core';
         showToast('🔧', `${label} upgraded to Lv.${state.upgrades[track]}!`);
         saveProgress();
         syncHUD();
@@ -4535,10 +3963,6 @@
       document.getElementById('btn-buy-blade').addEventListener('click', () => buyUpgrade('blade'));
       document.getElementById('btn-buy-engine').addEventListener('click', () => buyUpgrade('engine'));
       document.getElementById('btn-buy-thermal').addEventListener('click', () => buyUpgrade('thermal'));
-      const tracksBtn = document.getElementById('btn-buy-tracks');
-      if (tracksBtn) tracksBtn.addEventListener('click', () => buyUpgrade('tracks'));
-      const sirenBtn = document.getElementById('btn-buy-siren');
-      if (sirenBtn) sirenBtn.addEventListener('click', () => buyUpgrade('siren'));
 
       // Dedicated Pause Menu Toggle
       const pauseModal = document.getElementById('pause-menu-modal');
@@ -4551,9 +3975,7 @@
           // Update pause stats
           document.getElementById('pause-stat-credits').textContent = Math.floor(state.credits).toLocaleString();
           document.getElementById('pause-stat-area').textContent = Math.floor(state.totalAreaCleared).toLocaleString();
-          document.getElementById('pause-stat-rescued').textContent = String(state.rescuedCars || state.rescuedCount || 0);
-          const pauseCabins = document.getElementById('pause-stat-cabins');
-          if (pauseCabins) pauseCabins.textContent = String(state.savedCabins || 0);
+          document.getElementById('pause-stat-rescued').textContent = String(state.rescuedCount);
           document.getElementById('pause-stat-escorted').textContent = String(state.escortedCount);
         } else {
           pauseModal.classList.add('hidden');

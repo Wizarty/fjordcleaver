@@ -97,6 +97,36 @@
         pointer-events: auto;
       }
     }
+
+    .touch-steering-hint { display: none; }
+    .touch-controls #joystick-zone { opacity: 0; pointer-events: none; transition: none; }
+    .touch-controls #joystick-zone.is-active {
+      position: fixed; left: 0; top: 0; width: 112px !important; height: 112px !important;
+      transform: translate(-50%, -50%); opacity: .85; z-index: 35; transition: none;
+    }
+    #joystick-knob { position: absolute; left: calc(50% - 20px); top: calc(50% - 20px); }
+    @media (min-width: 640px) { #joystick-knob { left: calc(50% - 24px); top: calc(50% - 24px); } }
+    .touch-controls #joystick-home { pointer-events: none !important; }
+    .touch-controls #action-controls { pointer-events: none !important; }
+    .touch-controls #action-controls button { pointer-events: auto; }
+    .touch-controls #desktop-hints { display: none !important; }
+    .touch-controls #action-controls {
+      position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+      width: 154px; height: 154px;
+    }
+    .touch-controls #action-controls.actions-left { right: auto; left: max(12px, env(safe-area-inset-left)); }
+    .touch-controls #btn-dash { width: 72px !important; height: 72px !important; }
+    .touch-controls #btn-pulse { width: 62px !important; height: 62px !important; }
+    .touch-controls #btn-horn { width: 48px; height: 48px; top: 0; right: 50px; }
+    .touch-controls .actions-left #btn-dash { left: 0; right: auto; }
+    .touch-controls .actions-left #btn-pulse { right: 0; left: auto; }
+    .touch-controls .actions-left #btn-horn { left: 50px; right: auto; }
+    .touch-controls .touch-steering-hint:not([hidden]) {
+      display: block; position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: 16px;
+      width: 150px; color: #CBD5E1; font-size: 11px; padding: 8px; border-radius: 12px;
+      background: rgba(15,23,42,.7); pointer-events: none; z-index: 20;
+    }
+
     /* Mobile safe-area padding & native touch response */
     .safe-pad {
       padding-top: max(0.4rem, env(safe-area-inset-top, 0.4rem));
@@ -594,10 +624,10 @@
     <div class="flex items-end justify-between w-full select-none pointer-events-none">
 
       <!-- Bottom-Left Steering Zone (Adaptive Floating Touch Joystick) -->
-      <div class="pointer-events-auto flex flex-col items-start gap-1.5 sm:gap-2">
+      <div id="joystick-home" class="pointer-events-auto flex flex-col items-start gap-1.5 sm:gap-2">
         <div id="joystick-zone" class="relative w-24 h-24 sm:w-30 sm:h-30 rounded-full hud-glass flex items-center justify-center touch-none transition-all duration-150 shadow-xl"
              style="width: 6.25rem; height: 6.25rem;"
-             title="Drag anywhere on left half to steer">
+             title="Drag on the game field to steer">
           <!-- Compass ticks -->
           <span class="absolute top-1 text-[7px] sm:text-[8px] font-mono-num text-slate-400/80 font-bold pointer-events-none">NW</span>
           <span class="absolute bottom-1 text-[7px] sm:text-[8px] font-mono-num text-slate-400/80 font-bold pointer-events-none">SE</span>
@@ -624,7 +654,7 @@
       </div>
 
       <!-- Bottom-Right Thumb Action Cluster (Ergonomic Radial Arc on Phones) -->
-      <div class="pointer-events-auto relative thumb-cluster touch-none shrink-0 select-none">
+      <div id="action-controls" class="pointer-events-auto relative thumb-cluster touch-none shrink-0 select-none">
         <!-- Horn / Ping Mini-Button (Top of thumb arc) -->
         <button id="btn-horn" type="button" title="Sound Foghorn & Ping Rescue (H)"
                 class="action-btn absolute top-0 right-13 sm:top-1 sm:right-18 w-10 h-10 sm:w-11 sm:h-11 rounded-full hud-glass flex flex-col items-center justify-center text-amber-200 hover:border-amber-400/60 active:scale-90 touch-manipulation shadow-md z-10">
@@ -663,6 +693,7 @@
   </div>
 
 
+  <div id="touch-steering-hint" class="touch-steering-hint" aria-hidden="true">Drag anywhere on the field to steer</div>
   <!-- Dedicated Pause Menu Modal -->
   <div id="pause-menu-modal" style="display: none;" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-lg flex items-center justify-center p-3 sm:p-5 transition-opacity duration-200">
     <div class="hud-glass-warm max-w-md w-full max-h-[92vh] overflow-y-auto rounded-3xl p-5 sm:p-7 border border-amber-300/30 shadow-2xl flex flex-col gap-4">
@@ -2016,113 +2047,137 @@
         baseY: 0,
         dx: 0,
         dy: 0,
-        maxRadius: 38
+        maxRadius: 38,
+        touchInput: false
       };
 
       const joystickZone = document.getElementById('joystick-zone');
       const joystickKnob = document.getElementById('joystick-knob');
 
+      const actionControls = document.getElementById('action-controls');
+      const touchHint = document.getElementById('touch-steering-hint');
+      const touchDevice = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+      document.documentElement.classList.toggle('touch-controls', touchDevice);
+      let captureTarget = null;
+
       function updateJoystickVisual() {
         joystickKnob.style.transform = `translate3d(${joystick.dx.toFixed(1)}px, ${joystick.dy.toFixed(1)}px, 0px)`;
+        if (joystick.active && joystick.touchInput) {
+          joystickZone.style.left = `${joystick.baseX}px`;
+          joystickZone.style.top = `${joystick.baseY}px`;
+        }
       }
 
-      function startJoystick(clientX, clientY, pointerId) {
+      function startJoystick(clientX, clientY, pointerId, target, touchInput) {
+        if (state.paused || joystick.active) return;
         audio.init();
-        const rect = joystickZone.getBoundingClientRect();
         joystick.active = true;
+        state.mouseActive = false;
+        joystick.touchInput = touchInput;
         joystick.pointerId = pointerId;
+        joystick.maxRadius = touchInput ? 44 : 38;
         joystick.baseX = clientX;
         joystick.baseY = clientY;
-        handleJoystickMove(clientX, clientY);
-      }
-
-      joystickZone.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const rect = joystickZone.getBoundingClientRect();
-        startJoystick(rect.left + rect.width * 0.5, rect.top + rect.height * 0.5, e.pointerId);
-        try { joystickZone.setPointerCapture(e.pointerId); } catch (err) {}
-      });
-
-      joystickZone.addEventListener('pointermove', (e) => {
-        if (!joystick.active || e.pointerId !== joystick.pointerId) return;
-        e.preventDefault();
-        handleJoystickMove(e.clientX, e.clientY);
-      });
-
-      function endJoystick(e) {
-        if (!joystick.active || (e && e.pointerId !== joystick.pointerId)) return;
-        joystick.active = false;
-        joystick.pointerId = null;
         joystick.dx = 0;
         joystick.dy = 0;
+        captureTarget = target;
+        if (touchInput) {
+          document.documentElement.classList.add('touch-controls');
+          joystickZone.classList.add('is-active');
+          actionControls.classList.toggle('actions-left', clientX > viewW / 2);
+          touchHint.hidden = true;
+        }
+        try { target.setPointerCapture(pointerId); } catch (err) {}
         updateJoystickVisual();
       }
 
-      joystickZone.addEventListener('pointerup', endJoystick);
-      joystickZone.addEventListener('pointercancel', endJoystick);
+      function endJoystick(e) {
+        if (!joystick.active || (e && e.pointerId !== joystick.pointerId)) return;
+        const pointerId = joystick.pointerId;
+        const target = captureTarget;
+        joystick.active = false;
+        joystick.pointerId = null;
+        captureTarget = null;
+        joystick.dx = 0;
+        joystick.dy = 0;
+        joystickZone.classList.remove('is-active');
+        joystickZone.style.removeProperty('left');
+        joystickZone.style.removeProperty('top');
+        updateJoystickVisual();
+        try { if (target && target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId); } catch (err) {}
+      }
+
+      function resetSteering() {
+        endJoystick();
+        keys.clear();
+        state.mouseActive = false;
+      }
 
       function handleJoystickMove(clientX, clientY) {
         let vx = clientX - joystick.baseX;
         let vy = clientY - joystick.baseY;
         const mag = Math.hypot(vx, vy);
         if (mag > joystick.maxRadius) {
-          vx = (vx / mag) * joystick.maxRadius;
-          vy = (vy / mag) * joystick.maxRadius;
+          const clampedX = vx / mag * joystick.maxRadius;
+          const clampedY = vy / mag * joystick.maxRadius;
+          // The base follows a long swipe, so reversing never requires crossing the screen.
+          if (joystick.touchInput) {
+            joystick.baseX += vx - clampedX;
+            joystick.baseY += vy - clampedY;
+          }
+          vx = clampedX;
+          vy = clampedY;
         }
         joystick.dx = vx;
         joystick.dy = vy;
         updateJoystickVisual();
       }
 
-      // Seamless Mobile Touch Steering: Touching anywhere on the left half anchors joystick dynamically!
-      let touchSteerId = null;
+      joystickZone.addEventListener('pointerdown', (e) => {
+        if (joystick.active || state.paused || e.button !== 0) return;
+        e.preventDefault();
+        const touchInput = e.pointerType === 'touch' || e.pointerType === 'pen';
+        const rect = joystickZone.getBoundingClientRect();
+        startJoystick(touchInput ? e.clientX : rect.left + rect.width / 2,
+          touchInput ? e.clientY : rect.top + rect.height / 2, e.pointerId, joystickZone, touchInput);
+      });
 
       canvas.addEventListener('pointerdown', (e) => {
-        audio.init();
         if (state.paused) return;
-        const worldPos = screenToWorld(e.clientX, e.clientY);
-        state.mouseWorldX = worldPos.wx;
-        state.mouseWorldY = worldPos.wy;
-        state.mouseActive = true;
-
-        // If touching on left half (and below top HUD), anchor dynamic joystick right under player's thumb!
-        if (e.clientX < viewW * 0.55 && e.clientY > 75 && !joystick.active) {
-          touchSteerId = e.pointerId;
-          joystick.active = true;
-          joystick.pointerId = e.pointerId;
-          joystick.baseX = e.clientX;
-          joystick.baseY = e.clientY;
-          handleJoystickMove(e.clientX, e.clientY);
+        if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+          e.preventDefault();
+          startJoystick(e.clientX, e.clientY, e.pointerId, canvas, true);
+        } else if (e.button === 0) {
+          joystick.touchInput = false;
+          audio.init();
+          const p = screenToWorld(e.clientX, e.clientY);
+          state.mouseWorldX = p.wx;
+          state.mouseWorldY = p.wy;
+          state.mouseActive = true;
         }
       });
 
       window.addEventListener('pointermove', (e) => {
-        const worldPos = screenToWorld(e.clientX, e.clientY);
-        state.mouseWorldX = worldPos.wx;
-        state.mouseWorldY = worldPos.wy;
-
         if (joystick.active && e.pointerId === joystick.pointerId) {
+          e.preventDefault();
           handleJoystickMove(e.clientX, e.clientY);
+        } else if (e.pointerType === 'mouse') {
+          const p = screenToWorld(e.clientX, e.clientY);
+          state.mouseWorldX = p.wx;
+          state.mouseWorldY = p.wy;
         }
-      });
-
-      window.addEventListener('pointerup', (e) => {
-        if (joystick.active && e.pointerId === joystick.pointerId) {
-          endJoystick(e);
-          touchSteerId = null;
-        }
-      });
-
-      window.addEventListener('pointercancel', (e) => {
-        if (joystick.active && e.pointerId === joystick.pointerId) {
-          endJoystick(e);
-          touchSteerId = null;
-        }
-      });
+      }, { passive: false });
+      window.addEventListener('pointerup', endJoystick);
+      window.addEventListener('pointercancel', endJoystick);
+      canvas.addEventListener('lostpointercapture', endJoystick);
+      joystickZone.addEventListener('lostpointercapture', endJoystick);
+      window.addEventListener('blur', resetSteering);
+      window.addEventListener('resize', resetSteering);
+      document.addEventListener('visibilitychange', () => { if (document.hidden) resetSteering(); });
 
       window.addEventListener('keydown', (e) => {
         const code = e.code;
+        joystick.touchInput = false;
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(code)) {
           e.preventDefault();
         }
@@ -2159,9 +2214,14 @@
           const len = Math.hypot(sx, sy);
           sx /= len;
           sy /= len;
-        } else if (Math.hypot(joystick.dx, joystick.dy) > 4) {
-          sx = joystick.dx / joystick.maxRadius;
-          sy = joystick.dy / joystick.maxRadius;
+        } else if (joystick.active) {
+          const distance = Math.hypot(joystick.dx, joystick.dy);
+          const deadzone = joystick.touchInput ? 3 : 4;
+          if (distance > deadzone) {
+            const amount = Math.pow(Math.min(1, (distance - deadzone) / (joystick.maxRadius - deadzone)), joystick.touchInput ? 0.65 : 1);
+            sx = joystick.dx / distance * amount;
+            sy = joystick.dy / distance * amount;
+          }
         } else if (state.mouseSteer && state.mouseActive) {
           // Convert world vector toward cursor into screen-space steering
           const pScreen = worldToScreen(state.plow.wx, state.plow.wy, 0);
@@ -3078,6 +3138,12 @@
           } else {
             grip = 5.2; // Studded cleats bite into black ice!
           }
+        }
+
+        // Snappier touch steering on firm ground; ice and storm hazards keep their physics.
+        if (joystick.touchInput && !isIce && state.onBlackIceTimer <= 0) {
+          turnRate *= 1.8;
+          grip *= steer.active ? 1.6 : 2.6;
         }
 
         if (steer.active) {
@@ -4661,6 +4727,7 @@
       let workshopOpen = false;
 
       function toggleWorkshopDrawer(forceState) {
+        resetSteering();
         workshopOpen = typeof forceState === 'boolean' ? forceState : !workshopOpen;
         if (workshopOpen) {
           workshopDrawer.classList.remove('workshop-closed');
@@ -4673,6 +4740,7 @@
 
       function togglePauseModal(forceState) {
         const modal = document.getElementById('modal-backdrop');
+        resetSteering();
         state.paused = typeof forceState === 'boolean' ? forceState : !state.paused;
         if (state.paused) {
           modal.style.display = 'flex';
@@ -4739,6 +4807,7 @@
       const pauseModal = document.getElementById('pause-menu-modal');
       function toggleDedicatedPauseMenu(forceState) {
         audio.init();
+        resetSteering();
         state.paused = typeof forceState === 'boolean' ? forceState : !state.paused;
         if (state.paused) {
           pauseModal.classList.remove('hidden');
@@ -5064,20 +5133,27 @@
         showToast('🖱️', state.mouseSteer ? 'Mouse-Follow Steering Enabled' : 'Mouse-Follow Steering Off');
       });
 
-      document.getElementById('btn-dash').addEventListener('click', () => {
-        if (state.paused) togglePauseModal(false);
-        triggerPlowDash();
-      });
+      function bindActionButton(id, action) {
+        const button = document.getElementById(id);
+        let ignoreClickUntil = 0;
+        function invoke() { if (!state.paused) action(); }
+        button.addEventListener('pointerdown', (e) => {
+          if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+          e.preventDefault();
+          ignoreClickUntil = performance.now() + 800;
+          invoke();
+        });
+        button.addEventListener('click', (e) => {
+          if (e.detail !== 0 && performance.now() < ignoreClickUntil) return;
+          invoke();
+        });
+      }
 
-      document.getElementById('btn-pulse').addEventListener('click', () => {
-        if (state.paused) togglePauseModal(false);
-        triggerMeltPulse();
-      });
+      bindActionButton('btn-dash', triggerPlowDash);
 
-      document.getElementById('btn-horn').addEventListener('click', () => {
-        if (state.paused) togglePauseModal(false);
-        triggerHornPing();
-      });
+      bindActionButton('btn-pulse', triggerMeltPulse);
+
+      bindActionButton('btn-horn', triggerHornPing);
 
       document.getElementById('btn-start-game').addEventListener('click', () => {
         togglePauseModal(false);

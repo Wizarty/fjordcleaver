@@ -45,3 +45,7 @@ python3 tests/benchmark_career.py
 ```
 
 The benchmark accelerates gameplay logic without drawing, automatically buys affordable upgrades and uses abilities. It prunes distant test terrain to bound memory; it does not measure rendering performance or guarantee the same completion time for every route.
+
+## Touch controls
+
+On phones and tablets, touch any free part of the game field to place a floating joystick under your finger. Drag a little for precise low-speed movement or farther for full throttle. Its base follows long swipes, making short direction reversals possible. The action buttons move to the opposite side when you start steering, so either hand can steer; a second finger can activate abilities without interrupting movement. Touch abilities activate on contact. Releasing, cancelling, pausing, rotating or leaving the page clears steering. Ground steering and braking respond faster to touch; ice and weather hazards retain their handling penalties. Keyboard and optional mouse-follow controls remain available on desktop.

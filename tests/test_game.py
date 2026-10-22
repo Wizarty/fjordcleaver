@@ -44,7 +44,7 @@ class GameTests(unittest.TestCase):
         source = (ROOT / 'index.html').read_text()
         hook = '''window.gameTest = {state, chunks, keys, updateSimulation, updateActiveChunksAndPOIs,
           getUpgradeCost, buyUpgrade, syncHUD, getCellAtWorld, saveProgress, loadProgress,
-          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse};'''
+          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse, joystick, getSteeringInput};'''
         source = source.replace('let lastTime = performance.now();', hook + 'let lastTime = performance.now();')
         self.page.route('**/index.html', lambda r: r.fulfill(content_type='text/html', body=source))
         self.page.add_init_script('window.requestAnimationFrame = () => 0;')
@@ -173,6 +173,86 @@ class GameTests(unittest.TestCase):
         self.assertEqual(self.page.evaluate('gameTest.state.credits'), 80)
         self.assertEqual(self.page.evaluate('gameTest.state.upgrades.blade'), 1)
         self.assertEqual(self.page.evaluate('gameTest.state.unlockedLiveries'), [0, 1])
+
+    def test_real_multitouch_steering_and_opposite_hand_actions(self):
+        self.page.set_viewport_size({'width': 390, 'height': 844})
+        self.game()
+        self.page.locator('#btn-start-game').click()
+        cdp = self.page.context.new_cdp_session(self.page)
+        def touch(kind, points):
+            cdp.send('Input.dispatchTouchEvent', {'type': kind, 'touchPoints': [
+                {'x': x, 'y': y, 'id': i, 'radiusX': 8, 'radiusY': 8, 'force': 1}
+                for i, x, y in points]})
+        touch('touchStart', [(1, 290, 360)])
+        touch('touchMove', [(1, 370, 360)])
+        state = self.page.evaluate("({active:gameTest.joystick.active,base:gameTest.joystick.baseX,dx:gameTest.joystick.dx,input:gameTest.getSteeringInput(),left:document.querySelector('#action-controls').classList.contains('actions-left')})")
+        self.assertTrue(state['active'])
+        self.assertTrue(state['left'])
+        self.assertAlmostEqual(state['base'], 326, delta=1)
+        self.assertAlmostEqual(state['input']['throttle'], 1)
+        knob = self.page.locator('#joystick-zone').bounding_box()
+        self.assertAlmostEqual(knob['x'] + knob['width']/2, state['base'], delta=1)
+        touch('touchMove', [(1, 310, 360)])
+        self.page.wait_for_function('gameTest.joystick.dx < 0', polling=20, timeout=3000)
+        self.assertLess(self.page.evaluate('gameTest.joystick.dx'), 0)
+        box = self.page.locator('#btn-dash').bounding_box()
+        x, y = box['x'] + box['width']/2, box['y'] + box['height']/2
+        touch('touchStart', [(1, 310, 360), (2, x, y)])
+        self.assertGreater(self.page.evaluate('gameTest.state.plow.dashTimer'), 0)
+        self.assertLess(self.page.evaluate('gameTest.joystick.dx'), 0)
+        touch('touchEnd', [(2, x, y)])
+        self.assertTrue(self.page.evaluate('gameTest.joystick.active'))
+        touch('touchEnd', [])
+        self.assertFalse(self.page.evaluate('gameTest.getSteeringInput().active'))
+        self.assertEqual(self.page.locator('#joystick-zone').evaluate('(e)=>getComputedStyle(e).opacity'), '0')
+        # Change hands on free terrain, then verify the vacant old joystick area.
+        touch('touchStart', [(3, 40, 650)])
+        self.assertTrue(self.page.evaluate('gameTest.joystick.active'))
+        self.assertFalse(self.page.locator('#action-controls').evaluate("e=>e.classList.contains('actions-left')"))
+        touch('touchCancel', [])
+        self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
+        touch('touchStart', [(4, 40, 760)])
+        self.assertTrue(self.page.evaluate('gameTest.joystick.active'))
+        touch('touchEnd', [])
+
+    def test_touch_deadzone_cleanup_and_mouse_independence(self):
+        self.game()
+        self.page.locator('#btn-start-game').click()
+        def event(kind, x=700, y=400, pointer=5):
+            self.page.locator('canvas').dispatch_event(kind, {'pointerId': pointer,
+                'pointerType': 'touch', 'clientX': x, 'clientY': y, 'button': 0})
+        event('pointerdown')
+        event('pointermove', 702, 400)
+        self.assertFalse(self.page.evaluate('gameTest.getSteeringInput().active'))
+        event('pointermove', 710, 400)
+        self.assertGreater(self.page.evaluate('gameTest.getSteeringInput().throttle'), .2)
+        event('pointermove', 700, 330)
+        response = self.page.evaluate('''() => {
+          const desired=gameTest.getSteeringInput();
+          for(let i=0;i<3;i++)gameTest.updateSimulation(.05);
+          let error=Math.atan2(desired.wy,desired.wx)-gameTest.state.plow.angle;
+          error=Math.atan2(Math.sin(error),Math.cos(error));
+          return Math.abs(error);
+        }''')
+        self.assertLess(response, .4)
+        event('pointerup', 700, 330)
+        self.page.evaluate('for(let i=0;i<3;i++)gameTest.updateSimulation(.05)')
+        self.assertLess(self.page.evaluate('gameTest.state.plow.speed'), 2)
+        event('pointerdown')
+        self.page.locator('#btn-pause').click()
+        self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
+        self.page.locator('#btn-pause-close').click()
+        self.assertFalse(self.page.evaluate('gameTest.getSteeringInput().active'))
+        event('pointerdown')
+        self.page.evaluate("window.dispatchEvent(new Event('blur'))")
+        self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
+        event('pointerdown')
+        self.page.set_viewport_size({'width': 844, 'height': 390})
+        self.page.wait_for_timeout(100)
+        self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
+        self.page.locator('canvas').dispatch_event('pointerdown', {'pointerId': 9,
+            'pointerType': 'mouse', 'clientX': 400, 'clientY': 200, 'button': 0})
+        self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
 
     def test_upgrade_prices_and_max_level(self):
         self.game()

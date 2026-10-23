@@ -1935,7 +1935,7 @@
       }
 
       function getMaxSpeed() {
-        return 145 + (state.upgrades.engine - 1) * 22;
+        return [38, 54, 74, 100, 132, 170][state.upgrades.engine - 1];
       }
 
       function getDashMaxCooldown() {
@@ -1954,7 +1954,7 @@
         const lvl = state.upgrades[track] || 1;
         if (lvl >= 6) return Infinity;
         // Five paid levels in each of seven tracks: 2,325,000 credits total.
-        // Calibrated against active clearing runs for a roughly 1–2 hour career.
+        // Calibrated against active clearing runs for a roughly 3–4 hour career.
         const base = {blade: 8000, engine: 10000, thermal: 12000, tracks: 10000, siren: 13200, heater: 11200, spreader: 10600}[track];
         return base * Math.pow(2, lvl - 1);
       }

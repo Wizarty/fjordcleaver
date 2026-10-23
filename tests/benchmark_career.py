@@ -16,7 +16,7 @@ try:
         {wx:-280,wy:-180,vx:18,vy:-12,spin:0,radius:40,active:true}
       ];
       keys.add('KeyD');let elapsed=0;const milestones=[];
-      for(let i=0;i<144000;i++){
+      for(let i=0;i<288000;i++){
         updateSimulation(.05);elapsed+=.05;
         if(i%20===0){
           triggerPlowDash();triggerMeltPulse();
@@ -32,7 +32,7 @@ try:
       return {minutes:+(elapsed/60).toFixed(2),levels:state.upgrades,milestones};
     }''')
     print(json.dumps(result, indent=2))
-    assert 60 <= result['minutes'] <= 120, result
+    assert 180 <= result['minutes'] <= 240, result
     assert all(level == 6 for level in result['levels'].values()), result
 finally:
     case.tearDown()

@@ -44,7 +44,7 @@ class GameTests(unittest.TestCase):
         source = (ROOT / 'index.html').read_text()
         hook = '''window.gameTest = {state, chunks, keys, updateSimulation, updateActiveChunksAndPOIs,
           getUpgradeCost, buyUpgrade, syncHUD, getCellAtWorld, saveProgress, loadProgress,
-          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse, joystick, getSteeringInput};'''
+          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse, joystick, getSteeringInput, getMaxSpeed};'''
         source = source.replace('let lastTime = performance.now();', hook + 'let lastTime = performance.now();')
         self.page.route('**/index.html', lambda r: r.fulfill(content_type='text/html', body=source))
         self.page.add_init_script('window.requestAnimationFrame = () => 0;')
@@ -268,7 +268,7 @@ class GameTests(unittest.TestCase):
           return {idleDistance,boostedSpeed,stoppedSpeed:state.plow.speed,nitro:state.nitroTimer};
         }''')
         self.assertLess(result['idleDistance'], .01)
-        self.assertGreater(result['boostedSpeed'], 180)
+        self.assertGreater(result['boostedSpeed'], 50)
         self.assertLess(result['stoppedSpeed'], 2)
         self.assertGreater(result['nitro'], 0)
 
@@ -321,6 +321,19 @@ class GameTests(unittest.TestCase):
         self.assertLess(result['count'], 55)
         self.assertGreaterEqual(result['min'], 468)
         self.assertTrue(result['same'])
+
+    def test_engine_progression_starts_slow_and_improves_each_level(self):
+        self.game()
+        speeds=self.page.evaluate('''() => {
+          const values=[];
+          for(let level=1;level<=6;level++){
+            gameTest.state.upgrades.engine=level;values.push(gameTest.getMaxSpeed());
+          }
+          return values;
+        }''')
+        self.assertLessEqual(speeds[0], 40)
+        self.assertGreater(speeds[-1], speeds[0]*4)
+        self.assertTrue(all(b>a for a,b in zip(speeds,speeds[1:])))
 
     def test_upgrade_prices_and_max_level(self):
         self.game()

@@ -29,7 +29,7 @@ An interactive Nordic winter simulation built in pure HTML5 Canvas and procedura
 
 ## Career balance and rescue statistics
 
-The seven upgrade tracks each have five paid levels. Starting prices range from 8,000 to 13,200 credits and double at each level, for 2,325,000 credits to fully upgrade every track. Clearing income and pickup rewards are reduced, while rescue missions remain valuable. An accelerated run using the actual simulation, automatic purchases, Dash and Melt Pulse reached maximum upgrades at about 82 simulated minutes. The target is 1–2 hours of active play; routes, weather and purchase choices affect the result.
+The seven upgrade tracks each have five paid levels. Starting prices range from 8,000 to 13,200 credits and double at each level, for 2,325,000 credits to fully upgrade every track. Income favors clearing snow and completing rescues rather than collecting frequent pickups. An accelerated run using the actual simulation, automatic purchases, Dash and Melt Pulse reached maximum upgrades at about 98 simulated minutes. The target is 1–2 hours of active play; routes, weather and purchase choices affect the result.
 
 Cars show **freed / arrived at refuge**; houses count cleared entrances; people count pedestrian arrivals at the refuge. A target is counted once per valley, including after reload. Old combined rescue totals are retained separately in the pause menu rather than guessed into categories. Purchases and statistics autosave every ten active seconds. Existing progression is retained. **Start New Career** in the pause menu resets gameplay progression after confirmation and preserves purchased cosmetics; **New Valley** retains upgrades.
 
@@ -53,3 +53,5 @@ On phones and tablets, touch any free part of the game field to place a floating
 ## Smooth movement and desktop dragging
 
 Hold the left mouse button and drag on the game field to steer, then release to brake. Desktop dragging uses the same floating origin as touch without displaying a joystick. Touch controls appear only for active touch input; pointer-mode changes reset stale gestures. Nitro increases available speed and clearing power, but never applies throttle by itself. Dash remains a short deliberate forward impulse. Steering, velocity and camera follow use exponential smoothing, including a separately eased lookahead. Camera shake is capped and follows gentle continuous oscillations instead of random per-frame jumps.
+
+Supply pickups and thermal vents are spread across 3×3-chunk districts, with at most one per district and a minimum separation of 468 world units (about 59 displayed metres). One introductory crystal remains near spawn. Placement is deterministic and independent of chunk loading order.

@@ -1621,11 +1621,23 @@
           });
         }
 
-        if (!isSpawnChunk && hash2D(cx, cy, 950) < 0.72) {
-          const kinds = ['nitro', 'salt', 'wrench', 'cider', 'shield'];
-          pois.push({id: `supply_${cx}_${cy}`, type: kinds[Math.floor(hash2D(cx, cy, 951) * kinds.length)],
-            wx: (baseGx + 3.5) * CELL_SIZE, wy: (baseGy + 5.5) * CELL_SIZE,
-            collected: false, bobPhase: 0, spinPhase: 0});
+        // One supply candidate per 3x3-chunk district, independent of load order.
+        // Jitter stays in its central half, guaranteeing >=468 world units between districts.
+        const supplyTypes = ['crystal', 'crate', 'vent', 'nitro', 'salt', 'wrench', 'cider', 'shield'];
+        for (let i = pois.length - 1; i >= 0; i--) {
+          if (supplyTypes.includes(pois[i].type) && pois[i].id !== 'crystal_spawn') pois.splice(i, 1);
+        }
+        const districtSize = CHUNK_WORLD * 3;
+        const districtX = Math.floor(cx / 3), districtY = Math.floor(cy / 3);
+        const supplyX = (districtX + 0.25 + hash2D(districtX, districtY, 950) * 0.5) * districtSize;
+        const supplyY = (districtY + 0.25 + hash2D(districtX, districtY, 951) * 0.5) * districtSize;
+        const introX = -4.5 * CELL_SIZE, introY = 4.5 * CELL_SIZE;
+        if (Math.floor(supplyX / CHUNK_WORLD) === cx && Math.floor(supplyY / CHUNK_WORLD) === cy
+            && hash2D(districtX, districtY, 952) < 0.85
+            && Math.hypot(supplyX - introX, supplyY - introY) >= districtSize * 0.5) {
+          const type = supplyTypes[Math.floor(hash2D(districtX, districtY, 953) * supplyTypes.length)];
+          pois.push({id: `district_supply_${districtX}_${districtY}`, type, wx: supplyX, wy: supplyY,
+            collected: false, active: false, heatTimer: 0, pulsePhase: 0, bobPhase: 0, spinPhase: 0});
         }
         for (const poi of pois) {
           if (poi.type !== 'vehicle' && poi.type !== 'cabin') continue;
@@ -2576,7 +2588,7 @@
         if (snowCarvedThisFrame > 0.01) {
           const subBonus = centerCell.sub === SUB_TIMBER ? 1.35 : centerCell.sub === SUB_COBBLE ? 1.2 : 1.0;
           const areaDelta = snowCarvedThisFrame * 0.95;
-          const creditDelta = snowCarvedThisFrame * 0.034 * state.flow * subBonus;
+          const creditDelta = snowCarvedThisFrame * 1.2 * state.flow * subBonus;
           state.totalAreaCleared += areaDelta;
           state.credits += creditDelta;
 

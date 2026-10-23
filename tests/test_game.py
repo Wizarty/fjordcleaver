@@ -301,6 +301,27 @@ class GameTests(unittest.TestCase):
         self.assertAlmostEqual(results[0]['x'], results[1]['x'], delta=4)
         self.assertAlmostEqual(results[0]['y'], results[1]['y'], delta=4)
 
+    def test_supplies_are_sparse_spaced_and_independent_of_chunk_load_order(self):
+        self.game()
+        result=self.page.evaluate('''() => {
+          const {chunks,createChunk}=gameTest;
+          const types=new Set(['crystal','crate','vent','nitro','salt','wrench','cider','shield']);
+          const collect=()=>[...chunks.values()].flatMap(c=>c.pois).filter(p=>types.has(p.type));
+          chunks.clear();
+          for(let y=-9;y<=9;y++)for(let x=-9;x<=9;x++)createChunk(x,y);
+          const first=collect();let min=Infinity;
+          for(let i=0;i<first.length;i++)for(let j=i+1;j<first.length;j++)
+            min=Math.min(min,Math.hypot(first[i].wx-first[j].wx,first[i].wy-first[j].wy));
+          const signature=ps=>ps.map(p=>[p.id,p.type,p.wx,p.wy].join(':')).sort().join('|');
+          chunks.clear();
+          for(let y=9;y>=-9;y--)for(let x=9;x>=-9;x--)createChunk(x,y);
+          return {count:first.length,min,same:signature(first)===signature(collect())};
+        }''')
+        self.assertGreater(result['count'], 10)
+        self.assertLess(result['count'], 55)
+        self.assertGreaterEqual(result['min'], 468)
+        self.assertTrue(result['same'])
+
     def test_upgrade_prices_and_max_level(self):
         self.game()
         result = self.page.evaluate('''() => {

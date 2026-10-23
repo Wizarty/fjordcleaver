@@ -236,7 +236,7 @@ class GameTests(unittest.TestCase):
         }''')
         self.assertLess(response, .4)
         event('pointerup', 700, 330)
-        self.page.evaluate('for(let i=0;i<3;i++)gameTest.updateSimulation(.05)')
+        self.page.evaluate('for(let i=0;i<5;i++)gameTest.updateSimulation(.05)')
         self.assertLess(self.page.evaluate('gameTest.state.plow.speed'), 2)
         event('pointerdown')
         self.page.locator('#btn-pause').click()
@@ -252,7 +252,54 @@ class GameTests(unittest.TestCase):
         self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
         self.page.locator('canvas').dispatch_event('pointerdown', {'pointerId': 9,
             'pointerType': 'mouse', 'clientX': 400, 'clientY': 200, 'button': 0})
-        self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
+        self.assertTrue(self.page.evaluate('gameTest.joystick.active'))
+        self.assertEqual(self.page.locator('#joystick-zone').evaluate('(e)=>getComputedStyle(e).display'), 'none')
+
+    def test_nitro_boost_is_not_autopilot(self):
+        self.game()
+        result = self.page.evaluate('''() => {
+          const {state,keys,updateSimulation}=gameTest;
+          state.nitroTimer=7;const before={x:state.plow.wx,y:state.plow.wy};
+          for(let i=0;i<10;i++)updateSimulation(.02);
+          const idleDistance=Math.hypot(state.plow.wx-before.x,state.plow.wy-before.y);
+          keys.add('KeyD');for(let i=0;i<30;i++)updateSimulation(.02);
+          const boostedSpeed=state.plow.speed;keys.clear();
+          for(let i=0;i<15;i++)updateSimulation(.02);
+          return {idleDistance,boostedSpeed,stoppedSpeed:state.plow.speed,nitro:state.nitroTimer};
+        }''')
+        self.assertLess(result['idleDistance'], .01)
+        self.assertGreater(result['boostedSpeed'], 180)
+        self.assertLess(result['stoppedSpeed'], 2)
+        self.assertGreater(result['nitro'], 0)
+
+    def test_mouse_drag_stops_and_switches_back_from_touch(self):
+        self.game()
+        self.page.locator('#btn-start-game').click()
+        self.page.locator('canvas').dispatch_event('pointerdown', {'pointerId': 7, 'pointerType': 'touch', 'clientX': 700, 'clientY': 400})
+        self.page.locator('canvas').dispatch_event('pointerup', {'pointerId': 7, 'pointerType': 'touch'})
+        self.page.mouse.move(700, 400)
+        self.page.mouse.down()
+        self.page.mouse.move(750, 400)
+        self.assertTrue(self.page.evaluate('gameTest.getSteeringInput().active'))
+        self.assertFalse(self.page.locator('html').evaluate("e=>e.classList.contains('touch-controls')"))
+        self.assertEqual(self.page.locator('#joystick-zone').evaluate('(e)=>getComputedStyle(e).display'), 'none')
+        self.page.mouse.up()
+        self.assertFalse(self.page.evaluate('gameTest.getSteeringInput().active'))
+
+    def test_motion_response_is_consistent_across_frame_rates(self):
+        results=[]
+        for hz in (30, 120):
+            self.game()
+            results.append(self.page.evaluate('''hz => {
+              gameTest.keys.add('KeyW');
+              for(let i=0;i<hz*.4;i++)gameTest.updateSimulation(1/hz);
+              const p=gameTest.state.plow;return {angle:p.angle,speed:p.speed,x:p.wx,y:p.wy};
+            }''', hz))
+            self.page.unroute('**/index.html')
+        self.assertAlmostEqual(results[0]['angle'], results[1]['angle'], delta=.01)
+        self.assertAlmostEqual(results[0]['speed'], results[1]['speed'], delta=2)
+        self.assertAlmostEqual(results[0]['x'], results[1]['x'], delta=4)
+        self.assertAlmostEqual(results[0]['y'], results[1]['y'], delta=4)
 
     def test_upgrade_prices_and_max_level(self):
         self.game()

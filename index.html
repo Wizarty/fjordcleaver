@@ -98,6 +98,8 @@
       }
     }
 
+    #joystick-zone { display: none !important; }
+    .touch-controls #joystick-zone.is-active { display: flex !important; }
     .touch-steering-hint { display: none; }
     .touch-controls #joystick-zone { opacity: 0; pointer-events: none; transition: none; }
     .touch-controls #joystick-zone.is-active {
@@ -643,7 +645,7 @@
 
         <!-- Desktop Keybind Hint Bar + Mouse Steer Toggle -->
         <div id="desktop-hints" class="hud-glass pointer-events-auto hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] text-slate-300">
-          <span><strong class="text-amber-300">WASD / Arrows</strong> Steer</span>
+          <span><strong class="text-amber-300">WASD / Arrows or mouse drag</strong> Steer</span>
           <span class="text-slate-600">•</span>
           <button id="btn-mouse-steer" type="button" class="hover:text-sky-300 underline decoration-dotted touch-manipulation">Mouse Follow: <span id="mouse-steer-state">Off</span></button>
           <span class="text-slate-600">•</span>
@@ -1984,6 +1986,8 @@
         wx: 0,
         wy: 0,
         shake: 0,
+        lookX: 0,
+        lookY: 0,
         zoom: 1.0 // 1.0x normal, 1.25x mobile cozy diorama, 0.85x wide valley
       };
 
@@ -2056,8 +2060,13 @@
 
       const actionControls = document.getElementById('action-controls');
       const touchHint = document.getElementById('touch-steering-hint');
-      const touchDevice = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-      document.documentElement.classList.toggle('touch-controls', touchDevice);
+      const coarsePointer = window.matchMedia('(pointer: coarse)');
+      function syncControlMode() {
+        resetSteering();
+        document.documentElement.classList.toggle('touch-controls', coarsePointer.matches || navigator.maxTouchPoints > 0);
+      }
+      document.documentElement.classList.toggle('touch-controls', coarsePointer.matches || navigator.maxTouchPoints > 0);
+      coarsePointer.addEventListener('change', syncControlMode);
       let captureTarget = null;
 
       function updateJoystickVisual() {
@@ -2121,7 +2130,7 @@
           const clampedX = vx / mag * joystick.maxRadius;
           const clampedY = vy / mag * joystick.maxRadius;
           // The base follows a long swipe, so reversing never requires crossing the screen.
-          if (joystick.touchInput) {
+          if (joystick.active) {
             joystick.baseX += vx - clampedX;
             joystick.baseY += vy - clampedY;
           }
@@ -2148,12 +2157,19 @@
           e.preventDefault();
           startJoystick(e.clientX, e.clientY, e.pointerId, canvas, true);
         } else if (e.button === 0) {
-          joystick.touchInput = false;
-          audio.init();
-          const p = screenToWorld(e.clientX, e.clientY);
-          state.mouseWorldX = p.wx;
-          state.mouseWorldY = p.wy;
-          state.mouseActive = true;
+          document.documentElement.classList.remove('touch-controls');
+          actionControls.classList.remove('actions-left');
+          if (state.mouseSteer) {
+            joystick.touchInput = false;
+            audio.init();
+            const p = screenToWorld(e.clientX, e.clientY);
+            state.mouseWorldX = p.wx;
+            state.mouseWorldY = p.wy;
+            state.mouseActive = true;
+          } else {
+            e.preventDefault();
+            startJoystick(e.clientX, e.clientY, e.pointerId, canvas, false);
+          }
         }
       });
 
@@ -2167,12 +2183,12 @@
           state.mouseWorldY = p.wy;
         }
       }, { passive: false });
-      window.addEventListener('pointerup', endJoystick);
+      window.addEventListener('pointerup', (e) => { endJoystick(e); if (e.pointerType === 'mouse') state.mouseActive = false; });
       window.addEventListener('pointercancel', endJoystick);
       canvas.addEventListener('lostpointercapture', endJoystick);
       joystickZone.addEventListener('lostpointercapture', endJoystick);
       window.addEventListener('blur', resetSteering);
-      window.addEventListener('resize', resetSteering);
+      window.addEventListener('resize', syncControlMode);
       document.addEventListener('visibilitychange', () => { if (document.hidden) resetSteering(); });
 
       window.addEventListener('keydown', (e) => {
@@ -2902,7 +2918,7 @@
                         let diff = desiredAng - poi.angle;
                         while (diff < -Math.PI) diff += Math.PI * 2;
                         while (diff > Math.PI) diff -= Math.PI * 2;
-                        poi.angle += diff * Math.min(1, 4.8 * dt);
+                        poi.angle += diff * (1 - Math.exp(-4.8 * dt));
 
                         const sirenBonus = ((state.upgrades.siren || 1) - 1) * 9;
                         poi.speed = Math.min(48 + sirenBonus, poi.speed + (65 + sirenBonus * 0.8) * dt);
@@ -2980,7 +2996,7 @@
                       let diff = targetAng - poi.angle;
                       while (diff < -Math.PI) diff += Math.PI * 2;
                       while (diff > Math.PI) diff -= Math.PI * 2;
-                      poi.angle += diff * Math.min(1, 6.0 * dt);
+                      poi.angle += diff * (1 - Math.exp(-6.0 * dt));
 
                       const sirenBonus = ((state.upgrades.siren || 1) - 1) * 7;
                       poi.speed = Math.min(34 + sirenBonus, poi.speed + (70 + sirenBonus * 0.8) * dt);
@@ -3141,17 +3157,19 @@
         }
 
         // Snappier touch steering on firm ground; ice and storm hazards keep their physics.
-        if (joystick.touchInput && !isIce && state.onBlackIceTimer <= 0) {
+        if ((joystick.touchInput || joystick.active) && !isIce && state.onBlackIceTimer <= 0) {
           turnRate *= 1.8;
           grip *= steer.active ? 1.6 : 2.6;
         }
+
+        if (!steer.active && !isIce && state.onBlackIceTimer <= 0) grip = Math.max(grip, 18);
 
         if (steer.active) {
           const desiredAngle = Math.atan2(steer.wy, steer.wx);
           let diff = desiredAngle - plow.angle;
           while (diff < -Math.PI) diff += Math.PI * 2;
           while (diff > Math.PI) diff -= Math.PI * 2;
-          plow.angle += diff * Math.min(1, turnRate * dt);
+          plow.angle += diff * (1 - Math.exp(-turnRate * dt));
         }
 
         // Carve snow & compute snow resistance
@@ -3165,13 +3183,13 @@
         const windResistance = state.shieldTimer > 0 ? 0 : Math.max(0.15, 1 - (state.upgrades.tracks - 1) * 0.15);
         plow.vx += WEATHER_PHASES[state.weatherIndex].windX * stormStrength * windResistance * dt * 0.5;
         plow.vy += WEATHER_PHASES[state.weatherIndex].windY * stormStrength * windResistance * dt * 0.5;
-        const targetSpeed = (steer.active ? steer.throttle : (isNitro || plow.dashTimer > 0 ? 1.0 : 0)) * maxSpd * resistanceFactor;
+        const targetSpeed = (steer.active ? steer.throttle : (plow.dashTimer > 0 ? 1.0 : 0)) * maxSpd * resistanceFactor;
 
         const desiredVx = Math.cos(plow.angle) * targetSpeed;
         const desiredVy = Math.sin(plow.angle) * targetSpeed;
 
-        plow.vx += (desiredVx - plow.vx) * Math.min(1, grip * dt);
-        plow.vy += (desiredVy - plow.vy) * Math.min(1, grip * dt);
+        plow.vx += (desiredVx - plow.vx) * (1 - Math.exp(-grip * dt));
+        plow.vy += (desiredVy - plow.vy) * (1 - Math.exp(-grip * dt));
         plow.speed = Math.hypot(plow.vx, plow.vy);
 
         plow.wx += plow.vx * dt;
@@ -3190,10 +3208,12 @@
 
         // Smooth camera follow with look-ahead
         const lookAhead = Math.min(48, plow.speed * 0.28);
-        const targetCamX = plow.wx + Math.cos(plow.angle) * lookAhead;
-        const targetCamY = plow.wy + Math.sin(plow.angle) * lookAhead;
-        camera.wx += (targetCamX - camera.wx) * Math.min(1, 6.5 * dt);
-        camera.wy += (targetCamY - camera.wy) * Math.min(1, 6.5 * dt);
+        camera.lookX += (Math.cos(plow.angle) * lookAhead - camera.lookX) * (1 - Math.exp(-4 * dt));
+        camera.lookY += (Math.sin(plow.angle) * lookAhead - camera.lookY) * (1 - Math.exp(-4 * dt));
+        const targetCamX = plow.wx + camera.lookX;
+        const targetCamY = plow.wy + camera.lookY;
+        camera.wx += (targetCamX - camera.wx) * (1 - Math.exp(-5.5 * dt));
+        camera.wy += (targetCamY - camera.wy) * (1 - Math.exp(-5.5 * dt));
 
         if (camera.shake > 0) {
           camera.shake = Math.max(0, camera.shake - dt * 22);
@@ -3370,8 +3390,10 @@
         const weather = WEATHER_PHASES[state.weatherIndex];
 
         // Camera shake offset
-        const shakeX = camera.shake > 0 ? (Math.random() - 0.5) * camera.shake : 0;
-        const shakeY = camera.shake > 0 ? (Math.random() - 0.5) * camera.shake : 0;
+        const shakeTime = performance.now() * 0.012;
+        const shakeAmount = Math.min(1.25, camera.shake * 0.12);
+        const shakeX = Math.sin(shakeTime) * shakeAmount;
+        const shakeY = Math.sin(shakeTime * 0.73) * shakeAmount * 0.65;
 
         ctx.save();
         ctx.translate(shakeX, shakeY);
@@ -3878,7 +3900,7 @@
           }
 
           // Flashing orange hazard ring
-          const blink = (Math.sin(performance.now() * 0.009) + 1) * 0.5;
+          const blink = (Math.sin(performance.now() * 0.004) + 1) * 0.5;
           ctx.strokeStyle = `rgba(245, 158, 11, ${0.3 + blink * 0.6})`;
           ctx.lineWidth = 2;
           ctx.beginPath();
@@ -3887,7 +3909,7 @@
 
         } else if (car.status === 'blocked') {
           // ROAD BLOCKED BY SNOW: Flashing amber alert hazard bubble
-          const blink = Math.sin(performance.now() * 0.012) > 0;
+          const blink = (Math.sin(performance.now() * 0.004) + 1) * 0.5;
           const distToCityM = Math.round(Math.hypot(car.wx - CITY_X, car.wy - CITY_Y) / 8);
 
           ctx.save();
@@ -3895,7 +3917,7 @@
           ctx.textAlign = 'center';
 
           // Bubble background
-          ctx.fillStyle = blink ? 'rgba(239, 68, 68, 0.92)' : 'rgba(245, 158, 11, 0.92)';
+          ctx.fillStyle = `rgba(239, 100, 55, ${0.78 + blink * 0.12})`;
           ctx.beginPath();
           ctx.roundRect(p.x - 52, p.y - 36, 104, 18, 9);
           ctx.fill();
@@ -3950,7 +3972,7 @@
 
         // Shivering displacement if blocked by snow
         if (person.status === 'blocked') {
-          ctx.translate((Math.random() - 0.5) * 2, 0);
+          ctx.translate(Math.sin(performance.now() * 0.012 + person.wx * 0.1) * 0.45, 0);
         }
 
         // Bob up and down while walking
@@ -4066,7 +4088,7 @@
           ctx.fillRect(p.x + cxOff - 3, p.y - 68, 6, 18);
           const smokeRise = (((performance.now() * 0.02 + (cxOff + 50) * 7) % 20) + 20) % 20;
           const smokeRadius = Math.max(0.5, 2.5 + smokeRise * 0.25);
-          ctx.fillStyle = 'rgba(241, 245, 249, 0.55)';
+          ctx.fillStyle = `rgba(241, 245, 249, ${Math.sin(smokeRise / 20 * Math.PI) * 0.45})`;
           ctx.beginPath();
           ctx.arc(p.x + cxOff + Math.sin(smokeRise * 0.2) * 4, p.y - 72 - smokeRise, smokeRadius, 0, Math.PI * 2);
           ctx.fill();
@@ -4137,7 +4159,7 @@
         ctx.fill();
 
         // Blazing Fire Core (guaranteed positive radius)
-        const fireFlicker = Math.sin(performance.now() * 0.015) * 2;
+        const fireFlicker = Math.sin(performance.now() * 0.006);
         ctx.fillStyle = '#F59E0B';
         ctx.beginPath();
         ctx.ellipse(p.x - 42, p.y + 11, Math.max(1, 10 + fireFlicker), Math.max(0.5, 5 + fireFlicker * 0.5), 0, 0, Math.PI * 2);

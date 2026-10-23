@@ -53,7 +53,7 @@ class GameTests(unittest.TestCase):
         self.page.evaluate('gameTest.state.vortices = []')
 
     def test_offline_desktop_and_mobile_are_visible_and_clickable(self):
-        for width, height in [(1280, 900), (390, 844)]:
+        for width, height in [(1280, 900), (390, 844), (844, 390), (320, 480)]:
             self.page.set_viewport_size({'width': width, 'height': height})
             self.page.goto(self.url, wait_until='domcontentloaded')
             self.page.locator('#btn-start-game').click()
@@ -163,13 +163,12 @@ class GameTests(unittest.TestCase):
     def test_new_career_preserves_cosmetics_and_requires_confirmation(self):
         self.game()
         self.page.evaluate("gameTest.state.credits=999999;gameTest.state.upgrades.blade=6;gameTest.state.unlockedLiveries=[0,1];gameTest.saveProgress()")
-        self.page.once('dialog', lambda d: d.dismiss())
         self.page.locator('#btn-new-career').dispatch_event('click')
+        self.page.locator('#btn-cancel-career-reset').click()
         self.assertEqual(self.page.evaluate('gameTest.state.upgrades.blade'), 6)
-        self.page.once('dialog', lambda d: d.accept())
-        with self.page.expect_navigation(wait_until='domcontentloaded'):
-            self.page.locator('#btn-new-career').dispatch_event('click')
-        self.page.wait_for_function('window.gameTest')
+        self.page.locator('#btn-new-career').dispatch_event('click')
+        self.page.locator('#btn-confirm-career-reset').click()
+        self.page.wait_for_function('gameTest.state.upgrades.blade === 1', polling=20)
         self.assertEqual(self.page.evaluate('gameTest.state.credits'), 80)
         self.assertEqual(self.page.evaluate('gameTest.state.upgrades.blade'), 1)
         self.assertEqual(self.page.evaluate('gameTest.state.unlockedLiveries'), [0, 1])

@@ -29,7 +29,7 @@ try:
         }
         if(Object.values(state.upgrades).every(level=>level===6))break;
       }
-      return {minutes:+(elapsed/60).toFixed(2),levels:state.upgrades,milestones};
+      return {minutes:+(elapsed/60).toFixed(2),levels:state.upgrades,milestones,saveBytes:(localStorage.getItem('fjordcleaver_save_v1') || '').length*2};
     }''')
     print(json.dumps(result, indent=2))
     assert 180 <= result['minutes'] <= 240, result

@@ -31,7 +31,7 @@ An interactive Nordic winter simulation built in pure HTML5 Canvas and procedura
 
 ## Career balance and rescue statistics
 
-The seven upgrade tracks each have five paid levels. Starting prices range from 8,000 to 13,200 credits and double at each level, for 2,325,000 credits to fully upgrade every track. Income favors clearing snow and completing rescues rather than collecting frequent pickups. An accelerated run using the actual simulation, automatic purchases, Dash and Melt Pulse reached maximum upgrades at about 193 simulated minutes (3h 13m). The target is 3–4 hours of active play; routes, weather and purchase choices affect the result.
+The seven upgrade tracks each have five paid levels. Starting prices range from 8,000 to 13,200 credits and double at each level, for 2,325,000 credits to fully upgrade every track. Income favors clearing snow and completing rescues rather than collecting frequent pickups. An accelerated run using the actual simulation, automatic purchases, Dash and Melt Pulse reached maximum upgrades at about 198 simulated minutes (3h 18m). The target is 3–4 hours of active play; routes, weather and purchase choices affect the result.
 
 Cars show **freed / arrived at refuge**; houses count cleared entrances; people count pedestrian arrivals at the refuge. A target is counted once per valley, including after reload. Old combined rescue totals are retained separately in the pause menu rather than guessed into categories. Purchases and statistics autosave every ten active seconds. Existing progression is retained. **Start New Career** in the pause menu resets gameplay progression after confirmation and preserves purchased cosmetics; **New Valley** retains upgrades.
 
@@ -39,7 +39,7 @@ Vortices redeposit snow, push the plow, chill its engine and temporarily freeze 
 
 ## Validation
 
-The HTML includes compiled Tailwind 3.4.17 styles and runs without a CDN. Google Fonts are optional. To run browser regressions, install Python's `playwright` package and either system Chromium or `python3 -m playwright install chromium`, then run:
+The HTML includes compiled Tailwind 3.4.17 styles and runs without a CDN. All game styling is embedded; there are no external font requests. To run browser regressions, install Python's `playwright` package and either system Chromium or `python3 -m playwright install chromium`, then run:
 
 ```sh
 python3 -m unittest discover -s tests -v
@@ -59,3 +59,9 @@ Hold the left mouse button and drag on the game field to steer, then release to 
 Supply pickups and thermal vents are spread across 3×3-chunk districts, with at most one per district and a minimum separation of 468 world units (about 59 displayed metres). One introductory crystal remains near spawn. Placement is deterministic and independent of chunk loading order.
 
 Engine speed now progresses from 38 to 170 world units/second across six levels (38, 54, 74, 100, 132, 170), with a deliberately slow starter vehicle. Existing engine upgrades are preserved; start a new career to experience the full progression.
+
+## YouTube Playables preparation (not certification)
+
+See the [Russian audit matrix](docs/YOUTUBE_PLAYABLES_AUDIT.md) for verified checks, source references, and blockers. A hosted adapter handles SDK readiness, platform pause/audio and cloud saves; browser storage remains for the standalone Pages game. Create the isolated submission candidate with `python3 tools/build_playables.py`. The ZIP loads the original YouTube SDK first and contains only the game HTML and third-party notice. Native confirmation prompts and page reloads were replaced by an in-page reset dialog.
+
+Current official requirements and the real SDK/Test Suite could not be accessed because of the environment network policy. Mock-SDK tests are not YouTube certification. No submission has been made. Publisher access, current normative requirements, device/memory tests and listing assets remain to be verified.

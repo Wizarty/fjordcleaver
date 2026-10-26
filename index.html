@@ -656,10 +656,10 @@
       <!-- Bottom-Right Thumb Action Cluster (Ergonomic Radial Arc on Phones) -->
       <div id="action-controls" class="pointer-events-auto relative thumb-cluster touch-none shrink-0 select-none">
         <!-- Horn / Ping Mini-Button (Top of thumb arc) -->
-        <button id="btn-horn" type="button" title="Sound Foghorn & Ping Rescue (H)"
+        <button id="btn-horn" type="button" title="Rescue Ping (H): mark stranded targets, thaw and boost evacuees"
                 class="action-btn absolute top-0 right-13 sm:top-1 sm:right-18 w-10 h-10 sm:w-11 sm:h-11 rounded-full hud-glass flex flex-col items-center justify-center text-amber-200 hover:border-amber-400/60 active:scale-90 touch-manipulation shadow-md z-10">
           <span class="text-sm leading-none">📯</span>
-          <span class="text-[7px] sm:text-[8px] font-mono-num uppercase text-slate-300">Ping</span>
+          <span id="horn-label" class="text-[7px] sm:text-[8px] font-mono-num uppercase text-slate-300">Rescue</span>
         </button>
 
         <!-- Circular Melt Pulse Button (Inner arc) -->
@@ -1893,6 +1893,8 @@
         evacuatedPeople: 0,
         legacyRescues: 0,
         rescueEvents: new Set(),
+        pingTimer: 0,
+        pingTarget: null,
         elapsed: 0,
         autosaveTimer: 0,
         shieldTimer: 0,
@@ -1957,6 +1959,7 @@
           dashCooldown: 0,
           pulseCooldown: 0,
           hornRingTimer: 0,
+          hornCooldown: 0,
           currentSubstrate: SUB_ASPHALT,
           headlightFlicker: 1.0
         },
@@ -2400,7 +2403,7 @@
       function triggerPlowDash() {
         audio.init();
         if (state.plow.dashCooldown > 0) return;
-        state.plow.dashTimer = 0.52;
+        state.plow.dashTimer = 0.8;
         state.plow.dashCooldown = getDashMaxCooldown();
         camera.shake = 7.0;
         triggerHaptic(20);
@@ -2431,7 +2434,7 @@
         if (state.plow.pulseCooldown > 0) return;
         const radius = getPulseRadius();
         state.plow.pulseCooldown = getPulseMaxCooldown();
-        camera.shake = 9.5;
+        camera.shake = 2.0;
         triggerHaptic(26);
         audio.playChime('pulse');
 
@@ -2444,7 +2447,7 @@
           alpha: 1.0
         });
 
-        // Vaporize snow in a circular radius around the plow & create outer berm ring
+        // Melt snow and existing berms in place; never move snow to neighboring tiles.
         const cellSpan = Math.ceil(radius / CELL_SIZE) + 1;
         const centerGx = Math.floor(state.plow.wx / CELL_SIZE);
         const centerGy = Math.floor(state.plow.wy / CELL_SIZE);
@@ -2459,13 +2462,13 @@
             const dist = Math.hypot(cwx - state.plow.wx, cwy - state.plow.wy);
             const cell = getCellAtGrid(gx, gy);
 
-            if (dist <= radius && cell.snow > 0.02) {
+            if (dist <= radius && (cell.snow > 0 || cell.berm > 0)) {
               const removed = cell.snow;
               cell.snow = 0;
               cell.berm = 0;
               meltedCells += removed;
 
-              if (Math.random() < 0.35) {
+              if (removed > 0.02 && Math.random() < 0.35) {
                 state.particles.push({
                   wx: cwx,
                   wy: cwy,
@@ -2479,9 +2482,6 @@
                   maxLife: 0.55
                 });
               }
-            } else if (dist > radius && dist <= radius + CELL_SIZE * 1.15) {
-              cell.snow = Math.min(1.65, cell.snow + 0.22);
-              cell.berm = Math.min(0.6, cell.berm + 0.25);
             }
           }
         }
@@ -2498,83 +2498,58 @@
 
       function triggerHornPing() {
         audio.init();
-        if (state.plow.hornRingTimer > 0) return;
+        if (state.plow.hornCooldown > 0) return;
+        const level = state.upgrades.siren;
+        state.plow.hornCooldown = Math.max(5, 8 - (level - 1) * 0.5);
         state.plow.hornRingTimer = 1.2;
+        state.pingTimer = 12;
+        const hornRange = 240 + (level - 1) * 60;
+        const rallyDuration = 8 + (level - 1);
         triggerHaptic(15);
         audio.playChime('horn');
+        state.shockwaves.push({wx:state.plow.wx,wy:state.plow.wy,radius:10,maxRadius:hornRange,color:'#38BDF8',alpha:0.85});
+        const targets = [];
+        let rallied = 0;
+        chunks.forEach(chunk => chunk.pois.forEach(poi => {
+          const distance = Math.hypot(poi.wx - state.plow.wx, poi.wy - state.plow.wy);
+          if (distance > hornRange || poi.status === 'safe') return;
+          const evacuee = (poi.type === 'vehicle' || poi.type === 'citizen') && poi.status !== 'trapped';
+          if (evacuee) {
+            poi.frozenFor = 0;
+            poi.rallyTimer = rallyDuration;
+            poi.pathTimer = 0; // Immediately reconsider a newly plowed route.
+            poi.hornCooldown = 0;
+            poi.speechText = 'Siren heard! Following the clear road!';
+            poi.speechTimer = 3;
+            rallied++;
+          }
+          const needsHelp = (poi.type === 'vehicle' && ['trapped','blocked'].includes(poi.status))
+            || (poi.type === 'citizen' && poi.status === 'blocked') || (poi.type === 'cabin' && !poi.completed);
+          if (needsHelp) targets.push({poi,distance,priority:poi.status === 'blocked' ? 0 : 1});
+        }));
+        targets.sort((a,b) => a.priority-b.priority || a.distance-b.distance);
+        state.pingTarget = targets[0]?.poi || null;
+        const target = state.pingTarget;
+        const direction = target ? `${target.type === 'cabin' ? 'House' : target.type === 'citizen' ? 'Person' : 'Car'}: ${Math.round(targets[0].distance / 8)}m — follow the blue marker.` : 'No stranded targets nearby.';
+        showToast('📯', `${direction} ${rallied ? `${rallied} evacuees thawed, protected & boosted for ${rallyDuration}s.` : 'Clear a route, then ping to rally evacuees.'}`);
+      }
 
-        const hornRange = 170 + ((state.upgrades.siren || 1) - 1) * 45;
-        state.shockwaves.push({
-          wx: state.plow.wx,
-          wy: state.plow.wy,
-          radius: 10,
-          maxRadius: hornRange,
-          color: '#38BDF8',
-          alpha: 0.85
-        });
-
-        // Foghorn rallies blocked vehicles and citizens in range
-        chunks.forEach((chunk) => {
-          chunk.pois.forEach((poi) => {
-            if ((poi.type === 'vehicle' || poi.type === 'citizen') && poi.status === 'blocked') {
-              const d = Math.hypot(poi.wx - state.plow.wx, poi.wy - state.plow.wy);
-              if (d < hornRange) {
-                poi.speechText = 'Heard foghorn! Plowing path!';
-                poi.speechTimer = 3.0;
-                poi.hornCooldown = 0;
-                poi.frozenFor = Math.max(0, (poi.frozenFor || 0) - state.upgrades.siren);
-              }
-            }
-          });
-        });
-
-        // Find blocked vehicles or nearest trapped vehicles/POIs
-        let blockedCar = null;
-        let nearestTrapped = null;
-        let bestDist = Infinity;
-
-        let blockedPerson = null;
-        chunks.forEach((chunk) => {
-          chunk.pois.forEach((poi) => {
-            if (poi.type === 'citizen' && poi.status === 'blocked') {
-              blockedPerson = poi;
-            } else if (poi.type === 'vehicle') {
-              if (poi.status === 'blocked') {
-                blockedCar = poi;
-              } else if (poi.status === 'trapped') {
-                const d = Math.hypot(poi.wx - state.plow.wx, poi.wy - state.plow.wy);
-                if (d < bestDist) {
-                  bestDist = d;
-                  nearestTrapped = poi;
-                }
-              }
-            } else if (poi.type === 'cabin' && !poi.completed) {
-              const d = Math.hypot(poi.wx - state.plow.wx, poi.wy - state.plow.wy);
-              if (d < bestDist && !nearestTrapped) {
-                bestDist = d;
-                nearestTrapped = poi;
-              }
-            }
-          });
-        });
-
-        if (blockedPerson) {
-          const dM = Math.round(Math.hypot(blockedPerson.wx - state.plow.wx, blockedPerson.wy - state.plow.wy) / 8);
-          showToast('🥶', `Villager shivering in snow ${dM}m away! Plow path to city!`);
-          return;
-        }
-
-        if (blockedCar) {
-          const dM = Math.round(Math.hypot(blockedCar.wx - state.plow.wx, blockedCar.wy - state.plow.wy) / 8);
-          showToast('⚠️', `Car blocked by snow ${dM}m away! Plow a path to City!`);
-        } else if (nearestTrapped) {
-          const meters = Math.round(bestDist / 8);
-          const label = nearestTrapped.type === 'vehicle' ? `Stranded Car ${meters}m away!` : `Snowed-In Cabin ${meters}m away!`;
-          showToast('📯', label);
-        } else {
-          const toCity = Math.round(Math.hypot(CITY_X - state.plow.wx, CITY_Y - state.plow.wy) / 8);
-          showToast('🏛️', `Fjordhaven City is ${toCity}m away! Safe vehicles: ${state.evacuatedCars}`);
-        }
+      function drawRescuePing() {
+        const target = state.pingTarget;
+        if (state.pingTimer <= 0 || !target || target.status === 'safe' || target.completed) return;
+        const p = worldToScreen(target.wx, target.wy, 18);
+        const player = worldToScreen(state.plow.wx, state.plow.wy, 10);
+        const x = Math.max(36, Math.min(viewW-36,p.x));
+        const y = Math.max(150, Math.min(viewH-100,p.y));
+        ctx.save();
+        ctx.strokeStyle = 'rgba(56,189,248,0.7)';ctx.lineWidth = 2;ctx.setLineDash([6,8]);
+        ctx.beginPath();ctx.moveTo(player.x,player.y);ctx.lineTo(x,y);ctx.stroke();ctx.setLineDash([]);
+        ctx.fillStyle = '#0F172A';ctx.strokeStyle = '#38BDF8';
+        ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);ctx.fill();ctx.stroke();
+        ctx.fillStyle='#E0F2FE';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
+        ctx.fillText('SOS',x,y+4);
+        ctx.font='11px sans-serif';ctx.fillText(`${Math.round(Math.hypot(target.wx-state.plow.wx,target.wy-state.plow.wy)/8)}m`,x,y+34);
+        ctx.restore();
       }
 
       // =========================================================================
@@ -2797,6 +2772,7 @@
             // Update POIs in this chunk
             chunk.pois.forEach((poi) => {
               const distToPlow = Math.hypot(poi.wx - state.plow.wx, poi.wy - state.plow.wy);
+              poi.rallyTimer = Math.max(0, (poi.rallyTimer || 0) - dt);
               if ((poi.frozenFor || 0) > 0 && poi.status !== 'safe') {
                 poi.frozenFor = Math.max(0, poi.frozenFor - dt);
                 poi.speed = 0;
@@ -3050,7 +3026,7 @@
                         poi.angle += diff * (1 - Math.exp(-4.8 * dt));
 
                         const sirenBonus = ((state.upgrades.siren || 1) - 1) * 9;
-                        poi.speed = Math.min(48 + sirenBonus, poi.speed + (65 + sirenBonus * 0.8) * dt);
+                        poi.speed = Math.min((48 + sirenBonus) * (poi.rallyTimer > 0 ? 1.5 : 1), poi.speed + (65 + sirenBonus * 0.8) * dt);
                         poi.wx += Math.cos(poi.angle) * poi.speed * dt;
                         poi.wy += Math.sin(poi.angle) * poi.speed * dt;
 
@@ -3128,7 +3104,7 @@
                       poi.angle += diff * (1 - Math.exp(-6.0 * dt));
 
                       const sirenBonus = ((state.upgrades.siren || 1) - 1) * 7;
-                      poi.speed = Math.min(34 + sirenBonus, poi.speed + (70 + sirenBonus * 0.8) * dt);
+                      poi.speed = Math.min((34 + sirenBonus) * (poi.rallyTimer > 0 ? 1.5 : 1), poi.speed + (70 + sirenBonus * 0.8) * dt);
                       poi.wx += Math.cos(poi.angle) * poi.speed * dt;
                       poi.wy += Math.sin(poi.angle) * poi.speed * dt;
                       poi.walkAnimTimer += dt * 11;
@@ -3206,6 +3182,8 @@
         const steer = getSteeringInput();
 
         // Cooldowns & timers
+        state.pingTimer = Math.max(0, state.pingTimer - dt);
+        if (plow.hornCooldown > 0) plow.hornCooldown = Math.max(0, plow.hornCooldown - dt);
         if (plow.dashTimer > 0) plow.dashTimer = Math.max(0, plow.dashTimer - dt);
         if (plow.dashCooldown > 0) plow.dashCooldown = Math.max(0, plow.dashCooldown - dt);
         if (plow.pulseCooldown > 0) plow.pulseCooldown = Math.max(0, plow.pulseCooldown - dt);
@@ -3443,7 +3421,7 @@
             chunk.pois.forEach((poi) => {
               if ((poi.type === 'vehicle' || poi.type === 'citizen') && (poi.status === 'moving')) {
                 const dToEntity = Math.hypot(v.wx - poi.wx, v.wy - poi.wy);
-                if (dToEntity < v.radius + 12 && Math.hypot(poi.wx - CITY_X, poi.wy - CITY_Y) > CITY_RADIUS) {
+                if ((poi.rallyTimer || 0) <= 0 && dToEntity < v.radius + 12 && Math.hypot(poi.wx - CITY_X, poi.wy - CITY_Y) > CITY_RADIUS) {
                   poi.status = 'blocked';
                   poi.frozenFor = 2.5;
                   poi.speechText = 'Vortex freezing us! Help!';
@@ -3723,6 +3701,8 @@
         if (state.showRadarBeacons) {
           drawRadarWaypoints();
         }
+
+        drawRescuePing();
 
         // 9. Falling Blizzard Snowflakes (Screen-Space Parallax)
         drawFallingSnow(dt, weather);
@@ -4766,9 +4746,10 @@
       // 12. HUD & WORKSHOP UI SYNCHRONIZATION
       // =========================================================================
       function syncHUD() {
+        document.getElementById('horn-label').textContent = state.plow.hornCooldown > 0 ? `${Math.ceil(state.plow.hornCooldown)}s` : 'Rescue';
         const effects = [
           ['🏎️ Nitro', state.nitroTimer], ['🧂 Salt', state.saltTimer], ['🛡️ Shield', state.shieldTimer],
-          ['❄️ Frozen engine', state.chilledTimer], ['🧊 Black ice', state.onBlackIceTimer], ['📦 Wide blade', state.overdriveTimer]
+          ['❄️ Frozen engine', state.chilledTimer], ['🧊 Black ice', state.onBlackIceTimer], ['📦 Wide blade', state.overdriveTimer], ['📯 Rescue scan', state.pingTimer]
         ];
         document.getElementById('active-effects').textContent = effects.filter(([,t]) => t > 0).map(([name,t]) => `${name} ${Math.ceil(t)}s`).join(' · ');
         document.getElementById('active-effects').style.cssText = 'color:#F8FAFC;background:rgba(15,23,42,.8);border-radius:8px;padding:4px 8px';
@@ -4830,7 +4811,7 @@
         updateUpgradeCard('heater', `Freeze recovery: +${(state.upgrades.heater - 1) * 50}% • Engine insulation`);
         updateUpgradeCard('spreader', `Salt: ${14 + (state.upgrades.spreader - 1) * 3}s • Road protection: ${12 + (state.upgrades.spreader - 1) * 6}s`);
         updateUpgradeCard('tracks', `Grip: ${100 + ((state.upgrades.tracks || 1) - 1) * 30}% • Anti-Slip Lv.${state.upgrades.tracks || 1}`);
-        updateUpgradeCard('siren', `Radar: +${((state.upgrades.siren || 1) - 1) * 45}m • Escort Spd: +${((state.upgrades.siren || 1) - 1) * 25}%`);
+        updateUpgradeCard('siren', `Scan: ${Math.round((240 + (state.upgrades.siren - 1) * 60) / 8)}m • Rally: ${8 + state.upgrades.siren - 1}s • +50% escort speed`);
       }
 
       function updateUpgradeCard(track, descText) {
@@ -5019,9 +5000,9 @@
           await platform.write(JSON.stringify(fresh));
           loadProgress();
           chunks.clear();
-          Object.assign(state.plow, {wx:0,wy:0,vx:0,vy:0,speed:0,angle:-Math.PI/4,dashTimer:0,dashCooldown:0,pulseCooldown:0,hornRingTimer:0});
+          Object.assign(state.plow, {wx:0,wy:0,vx:0,vy:0,speed:0,angle:-Math.PI/4,dashTimer:0,dashCooldown:0,pulseCooldown:0,hornRingTimer:0,hornCooldown:0});
           Object.assign(camera, {wx:0,wy:0,lookX:0,lookY:0,shake:0});
-          for (const key of ['nitroTimer','saltTimer','shieldTimer','chilledTimer','onBlackIceTimer','overdriveTimer','elapsed','autosaveTimer','weatherTimer']) state[key]=0;
+          for (const key of ['nitroTimer','saltTimer','shieldTimer','chilledTimer','onBlackIceTimer','overdriveTimer','pingTimer','elapsed','autosaveTimer','weatherTimer']) state[key]=0;
           state.flow=1;state.flowProgress=0;state.flowDecayTimer=0;state.weatherIndex=0;state.manualWeatherLock=false;
           for (const key of ['particles','shockwaves','floatingTexts','tireTracks']) state[key].length=0;
           state.vortices.forEach((v,i) => Object.assign(v,{active:true,respawnIn:0,wx:(i%2? -1:1)*(140+i*40),wy:(i<2?-1:1)*(160+i*40)}));

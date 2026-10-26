@@ -31,7 +31,7 @@ An interactive Nordic winter simulation built in pure HTML5 Canvas and procedura
 
 ## Career balance and rescue statistics
 
-The seven upgrade tracks each have five paid levels. Starting prices range from 8,000 to 13,200 credits and double at each level, for 2,325,000 credits to fully upgrade every track. Income favors clearing snow and completing rescues rather than collecting frequent pickups. An accelerated run using the actual simulation, automatic purchases, Dash and Melt Pulse reached maximum upgrades at about 198 simulated minutes (3h 18m). The target is 3–4 hours of active play; routes, weather and purchase choices affect the result.
+The seven upgrade tracks each have five paid levels. Starting prices range from 8,000 to 13,200 credits and double at each level, for 2,325,000 credits to fully upgrade every track. Income favors clearing snow and completing rescues rather than collecting frequent pickups. An accelerated run using the actual simulation, automatic purchases, Dash and Melt Pulse reached maximum upgrades at about 181 simulated minutes (3h 1m). The target is 3–4 hours of active play; routes, weather and purchase choices affect the result.
 
 Cars show **freed / arrived at refuge**; houses count cleared entrances; people count pedestrian arrivals at the refuge. A target is counted once per valley, including after reload. Old combined rescue totals are retained separately in the pause menu rather than guessed into categories. Purchases and statistics autosave every ten active seconds. Existing progression is retained. **Start New Career** in the pause menu resets gameplay progression after confirmation and preserves purchased cosmetics; **New Valley** retains upgrades.
 
@@ -65,3 +65,9 @@ Engine speed now progresses from 38 to 170 world units/second across six levels 
 See the [Russian audit matrix](docs/YOUTUBE_PLAYABLES_AUDIT.md) for verified checks, source references, and blockers. A hosted adapter handles SDK readiness, platform pause/audio and cloud saves; browser storage remains for the standalone Pages game. Create the isolated submission candidate with `python3 tools/build_playables.py`. The ZIP loads the original YouTube SDK first and contains only the game HTML and third-party notice. Native confirmation prompts and page reloads were replaced by an in-page reset dialog.
 
 Current official requirements and the real SDK/Test Suite could not be accessed because of the environment network policy. Mock-SDK tests are not YouTube certification. No submission has been made. Publisher access, current normative requirements, device/memory tests and listing assets remain to be verified.
+
+## Abilities
+
+- **Melt** removes all snow and existing berms inside its radius without pushing snow outward. Clean ground stays clean and gives no empty-use reward or snow particles.
+- **Dash** provides a 0.8-second forward thrust (previously 0.52 seconds), with the existing cooldown.
+- **Rescue Ping (H)** marks the closest in-range stranded target for 12 seconds, prioritizing blocked evacuees. A blue SOS marker and direction line work even when the general radar is disabled. Nearby evacuees immediately thaw, recalculate their route, gain +50% movement speed on cleared roads and cannot be frozen by vortices for 8 seconds. It does not let them travel through snow. Siren upgrades extend range/duration and shorten its 8-second cooldown. The button displays remaining cooldown.

@@ -334,6 +334,69 @@ class GameTests(unittest.TestCase):
         self.assertGreater(speeds[-1], speeds[0]*4)
         self.assertTrue(all(b>a for a,b in zip(speeds,speeds[1:])))
 
+    def test_melt_removes_snow_and_berms_without_creating_a_ring(self):
+        self.game()
+        result=self.page.evaluate('''() => {
+          const {state,getCellAtWorld,triggerMeltPulse}=gameTest;
+          const cells=[];for(let y=-8;y<=8;y++)for(let x=-8;x<=8;x++){
+            const c=getCellAtWorld(x*26+13,y*26+13);c.snow=0;c.berm=0;cells.push(c);
+          }
+          const inner=getCellAtWorld(13,13),outer=getCellAtWorld(117,13);
+          inner.snow=.01;inner.berm=.4;outer.snow=.7;outer.berm=.3;
+          triggerMeltPulse();
+          const cleaned=inner.snow===0 && inner.berm===0;
+          const outsideUnchanged=outer.snow===.7 && outer.berm===.3;
+          for(const c of cells){c.snow=0;c.berm=0;}
+          state.plow.pulseCooldown=0;const particles=state.particles.length,credits=state.credits;
+          triggerMeltPulse();
+          return {cleaned,outsideUnchanged,noNewSnow:cells.every(c=>c.snow===0&&c.berm===0),
+            noEmptySteam:state.particles.length===particles,noEmptyReward:state.credits===credits};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_dash_has_longer_travel_and_cannot_be_recast_during_cooldown(self):
+        distances=[]
+        for duration in (.52,.8):
+            self.game()
+            distances.append(self.page.evaluate('''duration => {
+              const {state,triggerPlowDash,updateSimulation}=gameTest;
+              triggerPlowDash();state.plow.dashTimer=duration;
+              for(let i=0;i<45;i++)updateSimulation(.02);
+              const distance=Math.hypot(state.plow.wx,state.plow.wy);
+              const timer=state.plow.dashTimer;triggerPlowDash();
+              return {distance,recastBlocked:state.plow.dashTimer===timer};
+            }''',duration))
+            self.page.unroute('**/index.html')
+        self.assertGreater(distances[1]['distance'],distances[0]['distance']*1.35)
+        self.assertTrue(distances[1]['recastBlocked'])
+
+    def test_rescue_ping_thaws_boosts_marks_and_respects_range_and_cooldown(self):
+        self.game()
+        result=self.page.evaluate('''() => {
+          const {state,chunks,createChunk,getCellAtWorld,triggerHornPing,updateActiveChunksAndPOIs,renderScene}=gameTest;
+          state.plow.wx=330;state.plow.wy=0;
+          const chunk=createChunk(1,0);chunk.pois=[];
+          for(let x=0;x<20;x++)for(let y=-2;y<=2;y++)getCellAtWorld(x*26+13,y*26+13).snow=0;
+          const car={id:'pingcar',type:'vehicle',wx:330,wy:0,angle:Math.PI,status:'blocked',speed:48,
+            frozenFor:3,path:[{wx:300,wy:0}],pathTimer:999,speechTimer:0,stuckBlinkTimer:0};
+          const far={...car,id:'farcar',wx:1000,frozenFor:3};chunk.pois.push(car,far);
+          triggerHornPing();
+          const thawed=car.frozenFor===0,farFrozen=far.frozenFor===3;
+          const marked=state.pingTarget===car && state.pingTimer===12;
+          const waves=state.shockwaves.length;triggerHornPing();const cooldown=state.shockwaves.length===waves;
+          updateActiveChunksAndPOIs(.05);const boosted=car.speed>48;
+          state.vortices=[{wx:car.wx,wy:car.wy,vx:0,vy:0,radius:40,spin:0,active:true}];
+          gameTest.updateSimulation(.05);
+          const protectedFromFreeze=car.rallyTimer>0 && !car.frozenFor;
+          const blockedNode={wx:300,wy:0};getCellAtWorld(300,0).snow=1;
+          car.path=[blockedNode];car.pathTimer=999;const beforeX=car.wx;
+          updateActiveChunksAndPOIs(.05);
+          const respectsSnow=car.status==='blocked' && car.wx===beforeX;
+          state.showRadarBeacons=false;renderScene(.016);
+          return {thawed,farFrozen,marked,cooldown,boosted,protectedFromFreeze,respectsSnow};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
     def test_upgrade_prices_and_max_level(self):
         self.game()
         result = self.page.evaluate('''() => {

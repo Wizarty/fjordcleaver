@@ -71,3 +71,21 @@ Current official requirements and the real SDK/Test Suite could not be accessed 
 - **Melt** removes all snow and existing berms inside its radius without pushing snow outward. Clean ground stays clean and gives no empty-use reward or snow particles.
 - **Dash** provides a 0.8-second forward thrust (previously 0.52 seconds), with the existing cooldown.
 - **Rescue Ping (H)** marks the closest in-range stranded target for 12 seconds, prioritizing blocked evacuees. A blue SOS marker and direction line work even when the general radar is disabled. Nearby evacuees immediately thaw, recalculate their route, gain +50% movement speed on cleared roads and cannot be frozen by vortices for 8 seconds. It does not let them travel through snow. Siren upgrades extend range/duration and shorten its 8-second cooldown. The button displays remaining cooldown.
+
+## Map modes: Arcade and Snow City
+
+Choose **Arcade · Endless** or **Snow City · Build & restore** in the welcome screen or pause menu. Each mode has its own upgrades, credits and progress; existing saves migrate into Arcade. Switching modes saves the current profile before loading the other one.
+
+Snow City is a finite 48×48-tile island with persistent terrain and construction. Open **Build**, select a structure and tap a cleared tile adjoining the refuge or a connected heated road. Reopen Build and choose **Cancel placement / Drive** to resume steering. Buildings require snow stock, heat and sometimes water; exact costs are displayed before placement. Terrain must be clear and occupied tiles cannot be replaced.
+
+- **Heated road:** embedded waste-heat pipes melt snowfall immediately. Extend a connected road network to grow the city.
+- **Snow furnace:** processes collected snow into usable heat and water.
+- **Waterworks:** turns snow into a larger supply of water for the settlement.
+- **Geothermal plant:** provides renewable heat and melts nearby snow into the resource stock.
+- **Greenhouse:** uses water to produce food.
+- **Eco housing:** adds space for ten residents; population grows when food is available.
+- **Climate hub:** unlocks after a furnace, waterworks, greenhouse and two homes. The valley's heat network prevents new snowfall from accumulating, allowing final cleanup.
+
+The goal is to clear all **2,304 tiles**, build the climate hub and settle at least six residents. Completing the goal does not stop further building. Snow harvested with the plow, Melt and salt becomes city stock; actual harvesting, production and construction are covered by an end-to-end completion test without free resource grants. The existing Arcade campaign retains its progression and mechanics.
+
+In Snow City, **Ping** surveys the finite map and marks the nearest remaining patch of snow, making the last tiles easier to find.

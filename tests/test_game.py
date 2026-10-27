@@ -44,7 +44,7 @@ class GameTests(unittest.TestCase):
         source = (ROOT / 'index.html').read_text()
         hook = '''window.gameTest = {state, chunks, keys, updateSimulation, updateActiveChunksAndPOIs,
           getUpgradeCost, buyUpgrade, syncHUD, getCellAtWorld, saveProgress, loadProgress,
-          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse, joystick, getSteeringInput, getMaxSpeed};'''
+          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse, joystick, getSteeringInput, getMaxSpeed, switchGameMode, buildTownAt, cityStats, updateTown, townProtected, progressSnapshot, worldToScreen};'''
         source = source.replace('let lastTime = performance.now();', hook + 'let lastTime = performance.now();')
         self.page.route('**/index.html', lambda r: r.fulfill(content_type='text/html', body=source))
         self.page.add_init_script('window.requestAnimationFrame = () => 0;')
@@ -394,6 +394,109 @@ class GameTests(unittest.TestCase):
           const respectsSnow=car.status==='blocked' && car.wx===beforeX;
           state.showRadarBeacons=false;renderScene(.016);
           return {thawed,farFrozen,marked,cooldown,boosted,protectedFromFreeze,respectsSnow};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_city_and_arcade_profiles_are_separate_and_persistent(self):
+        self.game()
+        result=self.page.evaluate('''async () => {
+          const g=gameTest;g.state.credits=12345;g.state.upgrades.engine=3;
+          await g.switchGameMode('city');
+          const fresh=g.state.credits===80 && g.state.upgrades.engine===1;
+          g.state.city.snow=345;g.getCellAtWorld(400,0).snow=.17;g.saveProgress();
+          await g.switchGameMode('arcade');
+          const arcade=g.state.credits===12345 && g.state.upgrades.engine===3;
+          await g.switchGameMode('city');
+          const city=g.state.city.snow===345 && Math.abs(g.getCellAtWorld(400,0).snow-.17)<.001;
+          g.saveProgress();g.loadProgress();
+          return {fresh,arcade,city,reloaded:g.state.mode==='city' && g.state.city.snow===345};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_city_construction_connections_costs_and_snow_protection(self):
+        self.game()
+        result=self.page.evaluate('''async () => {
+          const g=gameTest;await g.switchGameMode('city');
+          Object.assign(g.state.city,{snow:1000,heat:1000,water:1000});
+          const distantRejected=!g.buildTownAt(20,20,'road');
+          for(let x=0;x<15;x++)g.getCellAtWorld(x*26+13,13).snow=0;
+          // Connect a chain out of the existing refuge plaza.
+          let built=0;for(let x=0;x<14;x++)if(g.buildTownAt(x,0,'road'))built++;
+          const key=Object.keys(g.state.city.tiles)[0];const [x,y]=key.split(',').map(Number);
+          const c=g.getCellAtWorld(x*26+13,y*26+13);c.snow=.8;c.berm=.5;
+          g.updateTown(.1);const protectedRoad=c.snow===0 && c.berm===0 && g.townProtected(x,y);
+          const before=g.state.city.snow;
+          const duplicateRejected=!g.buildTownAt(x,y,'road') && g.state.city.snow===before;
+          const prematureHubRejected=!g.buildTownAt(14,0,'climate');
+          return {distantRejected,built:built>0,paid:g.state.city.snow<1000,protectedRoad,duplicateRejected,prematureHubRejected};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_city_processing_population_and_reachable_completion(self):
+        self.game()
+        result=self.page.evaluate('''async () => {
+          const g=gameTest;await g.switchGameMode('city');
+          const c=g.state.city;
+          c.tiles={'10,0':'boiler','11,0':'water','12,0':'greenhouse','13,0':'home','14,0':'home'};
+          c.snow=100;c.water=20;c.food=2;
+          g.updateTown(1);
+          const processing=c.snow<100 && c.heat>12 && c.water>20 && c.population>0;
+          const notPremature=!c.completed;
+          c.tiles['15,0']='climate';c.population=6;
+          for(let y=-24;y<24;y++)for(let x=-24;x<24;x++){
+            const cell=g.getCellAtWorld(x*26+13,y*26+13);cell.snow=0;cell.berm=0;
+          }
+          g.updateTown(1);const complete=c.completed && g.cityStats().cleared===2304;
+          g.state.plow.wx=9999;g.state.plow.wy=-9999;g.updateTown(.1);
+          return {processing,notPremature,complete,protected:g.townProtected(20,20),bounded:Math.abs(g.state.plow.wx)<624&&Math.abs(g.state.plow.wy)<624};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_city_can_be_finished_using_only_harvested_snow(self):
+        self.game()
+        result=self.page.evaluate('''async () => {
+          const g=gameTest;await g.switchGameMode('city');
+          // Exercise the actual harvesting ability, without granting resources.
+          for(let y=-23;y<=25;y+=4)for(let x=-23;x<=25;x+=4){
+            g.state.plow.wx=(Math.min(x,23)+.5)*26;g.state.plow.wy=(Math.min(y,23)+.5)*26;
+            g.state.plow.pulseCooldown=0;g.triggerMeltPulse();
+          }
+          const cleared=g.cityStats().cleared;
+          const roads=[];for(let x=4;x<=10;x++)roads.push(g.buildTownAt(x,0,'road'));
+          const furnace=g.buildTownAt(4,1,'boiler');g.updateTown(400);
+          const buildings=[g.buildTownAt(5,1,'water'),g.buildTownAt(6,1,'greenhouse'),
+            g.buildTownAt(7,1,'home'),g.buildTownAt(8,1,'home'),g.buildTownAt(9,1,'climate'),g.buildTownAt(10,1,'geothermal')];
+          g.updateTown(120);
+          return {cleared,roads:roads.every(Boolean),furnace,buildings:buildings.every(Boolean),completed:g.state.city.completed};
+        }''')
+        self.assertEqual(result['cleared'],2304)
+        self.assertTrue(all(result[k] for k in ['roads','furnace','buildings','completed']),result)
+
+    def test_mobile_city_menu_and_canvas_placement(self):
+        self.page.set_viewport_size({'width':390,'height':844})
+        self.game()
+        self.page.locator('[data-game-mode="city"]').last.click()
+        self.page.wait_for_function("gameTest.state.mode==='city'",polling=20)
+        self.page.locator('#btn-start-game').click()
+        self.page.evaluate('gameTest.getCellAtWorld(117,13).snow=0;gameTest.renderScene(.016)')
+        self.page.locator('#city-open').click()
+        self.page.locator('[data-town-build="road"]').click()
+        position=self.page.evaluate('gameTest.worldToScreen(117,13)')
+        self.page.mouse.click(position['x'],position['y'])
+        self.assertEqual(self.page.evaluate("gameTest.state.city.tiles['4,0']"),'road')
+        self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
+
+    def test_city_ping_locates_the_last_snow_patch(self):
+        self.game()
+        result=self.page.evaluate('''async()=>{
+          const g=gameTest;await g.switchGameMode('city');
+          for(let y=-24;y<24;y++)for(let x=-24;x<24;x++){
+            const c=g.getCellAtWorld(x*26+13,y*26+13);c.snow=0;c.berm=0;
+          }
+          const c=g.getCellAtWorld(13*26+13,15*26+13);c.snow=.7;
+          g.triggerHornPing();const target=g.state.pingTarget;
+          c.snow=0;g.state.plow.hornCooldown=0;g.triggerHornPing();
+          return {located:target?.type==='snow' && target.wx===351 && target.wy===403,empty:g.state.pingTarget===null};
         }''')
         self.assertTrue(all(result.values()),result)
 

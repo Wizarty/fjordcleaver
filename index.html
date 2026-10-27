@@ -98,6 +98,7 @@
 
     #joystick-zone { display: none !important; }
     .touch-controls #joystick-zone.is-active { display: flex !important; }
+    #city-panel[hidden], #city-open[hidden] { display: none !important; }
     .touch-steering-hint { display: none; }
     .touch-controls #joystick-zone { opacity: 0; pointer-events: none; transition: none; }
     .touch-controls #joystick-zone.is-active {
@@ -757,6 +758,9 @@
         </div>
       </div>
 
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" data-game-mode="arcade" style="padding:10px;border:1px solid #64748B;border-radius:10px;">❄ Arcade · Endless</button>
+        <button type="button" data-game-mode="city" style="padding:10px;border:1px solid #64748B;border-radius:10px;">🏙 Snow City · Build & restore</button></div>
       <!-- Pause Menu Action Buttons -->
       <div class="flex flex-col gap-2 pt-1">
         <button id="btn-resume-game" type="button"
@@ -786,6 +790,13 @@
     </div>
   </div>
 
+  <button id="city-open" hidden type="button" style="position:fixed;left:8px;top:106px;z-index:25;background:#0F172A;color:#FDE68A;border:1px solid #F59E0B;border-radius:12px;padding:8px;font-size:11px;"><span id="city-summary">🏙️ Snow City</span> · Build</button>
+  <section id="city-panel" hidden aria-label="City construction" style="position:fixed;left:8px;top:148px;z-index:35;background:#0F172A;color:#F8FAFC;border:1px solid #64748B;border-radius:16px;padding:14px;width:min(360px,calc(100vw - 16px));max-height:65vh;overflow:auto;">
+    <button id="city-close" type="button" style="float:right;padding:8px;">Close ✕</button>
+    <h2 style="font-size:18px;">Snow-powered city</h2><p id="city-resources" style="font-size:12px;margin:10px 0;"></p>
+    <p id="city-objective" style="font-size:12px;margin:10px 0;"></p><div id="city-build-buttons"></div>
+    <p id="city-placement" style="font-size:12px;margin:10px 0;"></p><button id="city-cancel" type="button" style="padding:10px;border:1px solid #64748B;border-radius:8px;">Cancel placement / Drive</button>
+  </section>
   <!-- Welcome / Pause / Guide Overlay Modal (Mobile Optimized) -->
   <div id="modal-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 transition-opacity duration-300">
     <div class="hud-glass-warm max-w-md w-full max-h-[92vh] overflow-y-auto rounded-3xl p-4 sm:p-7 border border-amber-200/25 shadow-2xl flex flex-col gap-3.5 sm:gap-5">
@@ -799,13 +810,16 @@
             <h1 class="font-display text-2xl sm:text-3xl font-bold text-white leading-none mt-0.5">FJORDCLEAVER</h1>
           </div>
         </div>
-        <span class="px-2.5 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 font-mono-num text-xs font-semibold">ENDLESS</span>
+        <span class="px-2.5 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 font-mono-num text-xs font-semibold" id="world-mode-badge">ENDLESS</span>
       </div>
 
       <p class="text-sm text-slate-200 leading-relaxed">
         Carve tactile snow paths across a cozy low-poly valley. Uncover warm <strong class="text-slate-100">asphalt roads</strong>, <strong class="text-amber-200">Fjordhaven city plaza</strong>, <strong class="text-orange-200">timber cabin decks</strong>, and pure <strong class="text-sky-300">frozen lake ice</strong> (100% snow-free water for smooth drifting!).
       </p>
 
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" data-game-mode="arcade" style="padding:10px;border:1px solid #64748B;border-radius:10px;">❄ Arcade · Endless</button>
+        <button type="button" data-game-mode="city" style="padding:10px;border:1px solid #64748B;border-radius:10px;">🏙 Snow City · Build & restore</button></div><p id="mode-description" style="font-size:12px;"></p>
       <!-- Key Mechanics Grid -->
       <div class="grid grid-cols-2 gap-2.5 text-xs">
         <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-3">
@@ -1419,6 +1433,8 @@
         const cwx = (gx + 0.5) * CELL_SIZE;
         const cwy = (gy + 0.5) * CELL_SIZE;
         const distFromCity = Math.hypot(cwx - CITY_X, cwy - CITY_Y);
+        if(state.mode==='city' && !insideCity(gx,gy))return SUB_ICE;
+        if(state.mode==='city' && distFromCity>=CITY_RADIUS)return SUB_MEADOW;
 
         // Fjordhaven City Refuge Plaza & Avenues at origin
         if (distFromCity < CITY_RADIUS) {
@@ -1508,6 +1524,15 @@
           }
         }
 
+        if(state.mode==='city'){
+          cells.forEach(c=>{
+            const key=`${c.gx},${c.gy}`,saved=state.city.terrain[key];
+            if(saved){c.snow=saved[0];c.berm=saved[1];}
+            if(!insideCity(c.gx,c.gy)){c.snow=0;c.berm=0;}
+            if(state.city.tiles[key]){c.snow=0;c.berm=0;c.sub=state.city.tiles[key]==='road'?SUB_ASPHALT:SUB_COBBLE;}
+          });
+          const chunk={cx,cy,cells,props:[],pois:[]};chunks.set(getChunkKey(cx,cy),chunk);return chunk;
+        }
         // Spawn procedural POIs & Scenery inside this chunk
         const props = [];
         const pois = [];
@@ -1882,6 +1907,8 @@
       // 4. GAME STATE, PLAYER PLOW & UPGRADES
       // =========================================================================
       const state = {
+        mode: 'arcade',
+        city: freshCity(),
         paused: true,
         credits: 80,
         totalAreaCleared: 0,
@@ -1972,12 +1999,148 @@
         tireTracks: []
       };
 
+      // Finite Snow City campaign. Arcade generation/economy is kept in its own profile.
+      let progressProfiles = {};
+      let modeSwitching = false;
+      const CITY_GRID = 24;
+      const TOWN_BUILDINGS = {
+        road:{name:'♨ Heated road',snow:2,heat:1,water:0,color:'#D97706'},
+        boiler:{name:'🔥 Snow furnace',snow:40,heat:0,water:0,color:'#EA580C'},
+        water:{name:'💧 Waterworks',snow:70,heat:20,water:0,color:'#0284C7'},
+        geothermal:{name:'🌋 Geothermal plant',snow:100,heat:35,water:0,color:'#DC2626'},
+        greenhouse:{name:'🌱 Greenhouse',snow:80,heat:25,water:20,color:'#059669'},
+        home:{name:'🏡 Eco housing',snow:60,heat:15,water:10,color:'#8B5CF6'},
+        climate:{name:'☀ Climate hub',snow:240,heat:140,water:60,color:'#D97706'}
+      };
+      function freshCity() { return {snow:30,heat:12,water:0,food:0,population:0,tiles:{},terrain:{},completed:false,selected:null}; }
+      function insideCity(gx,gy) { return gx>=-CITY_GRID && gx<CITY_GRID && gy>=-CITY_GRID && gy<CITY_GRID; }
+      function townCount(type) { return Object.values(state.city.tiles).filter(t=>t===type).length; }
+      function townProtected(gx,gy) {
+        return state.mode==='city' && (Boolean(state.city.tiles[`${gx},${gy}`]) || townCount('climate')>0);
+      }
+      function citySnapshot() {
+        const terrain={...state.city.terrain};
+        chunks.forEach(chunk=>chunk.cells.forEach(c=>{if(insideCity(c.gx,c.gy))terrain[`${c.gx},${c.gy}`]=[c.snow,c.berm];}));
+        return {...state.city,terrain,selected:null};
+      }
+      function newProfile() {
+        return {credits:80,totalAreaCleared:0,rescuedCount:0,rescuedCars:0,savedCabins:0,evacuatedCars:0,evacuatedPeople:0,
+          legacyRescues:0,rescueEvents:[],worldSeed:1337,upgrades:{blade:1,engine:1,thermal:1,tracks:1,siren:1,heater:1,spreader:1},
+          liveryIndex:0,unlockedLiveries:[0],trailIndex:0,unlockedTrails:[0],headlightIndex:0,unlockedHeadlights:[0],city:freshCity()};
+      }
+      async function switchGameMode(mode) {
+        if (modeSwitching || !platform.initialized || !['arcade','city'].includes(mode) || mode===state.mode) return;
+        modeSwitching=true;
+        const oldMode=state.mode;
+        progressProfiles[oldMode]=progressSnapshot();
+        const target=progressProfiles[mode] || newProfile();
+        const envelope={...target,mode,profiles:{...progressProfiles,[mode]:target}};
+        try { await platform.write(JSON.stringify(envelope)); }
+        catch(e){modeSwitching=false;showToast('⚠️','Could not save. Mode was not changed.');return;}
+        resetSteering();loadProgress();chunks.clear();modeSwitching=false;
+        Object.assign(state.plow,{wx:0,wy:0,vx:0,vy:0,speed:0,dashTimer:0,dashCooldown:0,pulseCooldown:0,hornCooldown:0});
+        Object.assign(camera,{wx:0,wy:0,lookX:0,lookY:0,shake:0});
+        for(const key of ['particles','shockwaves','floatingTexts','tireTracks'])state[key].length=0;
+        for(const key of ['nitroTimer','saltTimer','shieldTimer','overdriveTimer','chilledTimer','onBlackIceTimer','pingTimer'])state[key]=0;
+        state.weatherIndex=0;state.weatherTimer=0;state.elapsed=0;state.flow=1;state.flowProgress=0;
+        document.getElementById('city-panel').hidden=true;
+        toggleDedicatedPauseMenu(false);togglePauseModal(true);syncHUD();
+      }
+      function buildTownAt(gx,gy,type=state.city.selected) {
+        if(state.mode!=='city' || !TOWN_BUILDINGS[type] || !insideCity(gx,gy))return false;
+        const key=`${gx},${gy}`,def=TOWN_BUILDINGS[type],c=getCellAtGrid(gx,gy);
+        const distance=Math.hypot((gx+.5)*CELL_SIZE,(gy+.5)*CELL_SIZE);
+        const reject=text=>{showToast('🏗️',text);return false;};
+        if(state.city.tiles[key] || distance<CITY_RADIUS)return reject('Choose an empty tile outside the refuge plaza.');
+        if(c.snow>.02 || c.berm>.02)return reject('Clear this tile with your plow or Melt first.');
+        const adjacent=distance<CITY_RADIUS+CELL_SIZE*1.8 || [[1,0],[-1,0],[0,1],[0,-1]].some(([x,y])=>state.city.tiles[`${gx+x},${gy+y}`]==='road');
+        if(!adjacent)return reject('Connect this tile to the refuge with heated roads first.');
+        if(type==='climate' && !(townCount('boiler') && townCount('water') && townCount('greenhouse') && townCount('home')>=2))
+          return reject('Climate hub needs a furnace, waterworks, greenhouse and 2 homes.');
+        if(type==='climate' && townCount('climate'))return reject('A climate hub already protects the valley.');
+        if(['snow','heat','water'].some(k=>state.city[k]<def[k]))return reject('Not enough city resources. Collect snow and process it first.');
+        for(const k of ['snow','heat','water'])state.city[k]-=def[k];
+        state.city.tiles[key]=type;c.sub=type==='road'?SUB_ASPHALT:SUB_COBBLE;c.snow=0;c.berm=0;
+        if(type!=='road')state.city.selected=null;
+        showToast('🏗️',`${def.name} built! ${type==='road'?'Waste-heat pipes melt snowfall instantly.':''}`);
+        saveProgress();syncHUD();return true;
+      }
+      function cityStats() {
+        let cleared=0;
+        for(let y=-CITY_GRID;y<CITY_GRID;y++)for(let x=-CITY_GRID;x<CITY_GRID;x++){
+          const c=getCellAtGrid(x,y);if(c.snow<=.02 && c.berm<=.02)cleared++;
+        }
+        return {cleared,total:CITY_GRID*CITY_GRID*4};
+      }
+      function updateTown(dt) {
+        if(state.mode!=='city')return;
+        const limit=CITY_GRID*CELL_SIZE-14;
+        state.plow.wx=Math.max(-limit,Math.min(limit,state.plow.wx));
+        state.plow.wy=Math.max(-limit,Math.min(limit,state.plow.wy));
+        const city=state.city;
+        for(const [key,type] of Object.entries(city.tiles)){
+          const [gx,gy]=key.split(',').map(Number),c=getCellAtGrid(gx,gy);c.snow=0;c.berm=0;
+          if(type==='boiler' || type==='water'){
+            const used=Math.min(city.snow,dt*.4);city.snow-=used;
+            city.heat+=used*(type==='boiler'?2:0.3);city.water+=used*(type==='water'?3:1);
+          }
+          if(type==='geothermal'){
+            city.heat+=dt*.6;
+            for(let oy=-2;oy<=2;oy++)for(let ox=-2;ox<=2;ox++){
+              if(!insideCity(gx+ox,gy+oy))continue;
+              const cell=getCellAtGrid(gx+ox,gy+oy),removed=Math.min(cell.snow,dt*.18);
+              cell.snow-=removed;cell.berm=0;city.snow+=removed;
+            }
+          }
+          if(type==='greenhouse'){
+            const used=Math.min(city.water,dt*.06);city.water-=used;city.food+=used*3;
+          }
+        }
+        const capacity=townCount('home')*10;
+        if(city.population<capacity && city.food>0){const growth=Math.min(dt*.1,city.food,capacity-city.population);city.food-=growth;city.population+=growth;}
+        state.cityCheckTimer=(state.cityCheckTimer||0)+dt;
+        if(state.cityCheckTimer>=1){
+          state.cityCheckTimer=0;const stats=cityStats();
+          if(!city.completed && stats.cleared===stats.total && townCount('climate') && city.population>=6){
+            city.completed=true;showToast('🏆','Valley restored! All snow cleared. Your city turns winter into clean heat, water and food.');saveProgress();
+          }
+        }
+      }
+      function drawTownBuilding(item) {
+        const p=worldToScreen(item.wx,item.wy),def=TOWN_BUILDINGS[item.type];
+        if(p.x<-70||p.x>viewW+70||p.y<-70||p.y>viewH+90)return;
+        ctx.save();ctx.fillStyle=def.color;ctx.fillRect(p.x-15,p.y-33,30,31);
+        ctx.fillStyle='#0F172A';ctx.beginPath();ctx.moveTo(p.x-21,p.y-33);ctx.lineTo(p.x,p.y-49);ctx.lineTo(p.x+21,p.y-33);ctx.closePath();ctx.fill();
+        ctx.fillStyle='#FEF3C7';ctx.fillRect(p.x-9,p.y-25,6,8);ctx.fillRect(p.x+4,p.y-25,6,8);
+        ctx.font='17px sans-serif';ctx.textAlign='center';ctx.fillText(def.name.split(' ')[0],p.x,p.y-49);ctx.restore();
+      }
+      function syncTownUI() {
+        document.getElementById('world-mode-badge').textContent=state.mode==='city'?'48 × 48':'ENDLESS';
+        document.querySelectorAll('[data-game-mode]').forEach(b=>{
+          b.setAttribute('aria-pressed',String(b.dataset.gameMode===state.mode));
+          b.style.borderColor=b.dataset.gameMode===state.mode?'#FBBF24':'#64748B';
+        });
+        document.getElementById('city-open').hidden=state.mode!=='city';
+        document.getElementById('mode-description').textContent=state.mode==='city'?'Snow City: a finite valley. Collect snow → build utilities → expand along heated roads → build the climate hub → clear all 2,304 tiles.':'Arcade: endless snow-plowing and rescue missions.';
+        if(state.mode!=='city'){document.getElementById('city-panel').hidden=true;return;}
+        const city=state.city,stats=cityStats();
+        document.getElementById('city-summary').textContent=`🏙️ ${Math.round(stats.cleared/stats.total*100)}% clear · ${Math.floor(city.population)} residents`;
+        document.getElementById('city-resources').textContent=`❄ Snow ${Math.floor(city.snow)} · ♨ Heat ${Math.floor(city.heat)} · 💧 Water ${Math.floor(city.water)} · 🌱 Food ${Math.floor(city.food)} · 🏡 Capacity ${townCount('home')*10}`;
+        document.getElementById('city-objective').textContent=city.completed?'🏆 Valley restored! Keep expanding your city.':`Clear ${stats.cleared}/${stats.total} tiles. Build a furnace, waterworks, greenhouse, 2 homes and climate hub. Settle 6 residents.`;
+        document.getElementById('city-placement').textContent=city.selected?`Place ${TOWN_BUILDINGS[city.selected].name}: tap a cleared tile next to the plaza or a heated road. Cancel to drive.`:'Snow is your construction material. Furnaces turn it into heat and water; buried heat pipes keep roads clear.';
+        document.querySelectorAll('[data-town-build]').forEach(b=>{b.style.outline=city.selected===b.dataset.townBuild?'2px solid #FBBF24':'none';});
+      }
+
       // Load saved progress safely
       function loadProgress() {
         try {
           const raw = platform.read();
           if (!raw) return;
-          const saved = JSON.parse(raw);
+          const envelope = JSON.parse(raw);
+          state.mode = envelope.mode==='city'?'city':'arcade';
+          progressProfiles = envelope.profiles || {[state.mode]:envelope};
+          const saved = envelope.profiles?.[state.mode] || envelope;
+          state.city = {...freshCity(),...(saved.city || {}),selected:null};
           if (typeof saved.credits === 'number') state.credits = saved.credits;
           if (typeof saved.totalAreaCleared === 'number') state.totalAreaCleared = saved.totalAreaCleared;
           if (typeof saved.rescuedCount === 'number') state.rescuedCount = saved.rescuedCount;
@@ -2020,9 +2183,7 @@
         return true;
       }
 
-      function saveProgress() {
-        try {
-          platform.write(JSON.stringify({
+      function progressSnapshot() {return {
             credits: Math.floor(state.credits),
             totalAreaCleared: Math.floor(state.totalAreaCleared),
             rescuedCount: state.rescuedCount,
@@ -2041,10 +2202,15 @@
             unlockedTrails: state.unlockedTrails,
             headlightIndex: state.headlightIndex,
             unlockedHeadlights: state.unlockedHeadlights
-          })).catch(() => showToast('⚠️', 'Progress could not be saved. Please keep this game open.'));
-        } catch (e) {
-          // Ignore sandbox storage errors
-        }
+,city:state.mode==='city'?citySnapshot():freshCity()
+          };}
+      function saveProgress() {
+        if(modeSwitching)return;
+        try {
+          const snapshot=progressSnapshot();progressProfiles[state.mode]=snapshot;
+          platform.write(JSON.stringify({...snapshot,mode:state.mode,profiles:progressProfiles}))
+            .catch(()=>showToast('⚠️','Progress could not be saved. Please keep this game open.'));
+        } catch(e) { /* Storage may be unavailable. */ }
       }
 
       // Computed stats from upgrades
@@ -2284,6 +2450,7 @@
 
       canvas.addEventListener('pointerdown', (e) => {
         if (state.paused || platform.suspended) return;
+        if(state.mode==='city' && state.city.selected){e.preventDefault();const p=screenToWorld(e.clientX,e.clientY);buildTownAt(Math.floor(p.wx/CELL_SIZE),Math.floor(p.wy/CELL_SIZE));return;}
         if (e.pointerType === 'touch' || e.pointerType === 'pen') {
           e.preventDefault();
           startJoystick(e.clientX, e.clientY, e.pointerId, canvas, true);
@@ -2486,6 +2653,7 @@
           }
         }
 
+        if(state.mode==='city')state.city.snow+=meltedCells;
         if (meltedCells > 0) {
           const areaGain = meltedCells * 2.4;
           const creditGain = Math.round(meltedCells * 0.072 * state.flow);
@@ -2508,6 +2676,17 @@
         triggerHaptic(15);
         audio.playChime('horn');
         state.shockwaves.push({wx:state.plow.wx,wy:state.plow.wy,radius:10,maxRadius:hornRange,color:'#38BDF8',alpha:0.85});
+        if(state.mode==='city'){
+          let nearest=null,best=Infinity;
+          for(let y=-CITY_GRID;y<CITY_GRID;y++)for(let x=-CITY_GRID;x<CITY_GRID;x++){
+            const c=getCellAtGrid(x,y);if(c.snow<=.02 && c.berm<=.02)continue;
+            const wx=(x+.5)*CELL_SIZE,wy=(y+.5)*CELL_SIZE,d=Math.hypot(wx-state.plow.wx,wy-state.plow.wy);
+            if(d<best){best=d;nearest={type:'snow',wx,wy};}
+          }
+          state.pingTarget=nearest;
+          showToast('📯',nearest?`Snow survey: nearest remaining drift ${Math.round(best/8)}m away. Follow the blue marker.`:'All city tiles are clear. Check your settlement goals!');
+          return;
+        }
         const targets = [];
         let rallied = 0;
         chunks.forEach(chunk => chunk.pois.forEach(poi => {
@@ -2547,7 +2726,7 @@
         ctx.fillStyle = '#0F172A';ctx.strokeStyle = '#38BDF8';
         ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);ctx.fill();ctx.stroke();
         ctx.fillStyle='#E0F2FE';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
-        ctx.fillText('SOS',x,y+4);
+        ctx.fillText(target.type==='snow'?'SNOW':'SOS',x,y+4);
         ctx.font='11px sans-serif';ctx.fillText(`${Math.round(Math.hypot(target.wx-state.plow.wx,target.wy-state.plow.wy)/8)}m`,x,y+34);
         ctx.restore();
       }
@@ -2579,6 +2758,7 @@
             for (let dx = -2 - Math.floor((state.upgrades.spreader - 1) / 2); dx <= 2 + Math.floor((state.upgrades.spreader - 1) / 2); dx++) {
               const sc = getCellAtGrid(sGx + dx, sGy + dy);
               if (sc) {
+                if(state.mode==='city')state.city.snow+=sc.snow;
                 sc.snow = 0;
                 sc.berm = 0;
                 sc.saltedUntil = state.elapsed + 12 + (state.upgrades.spreader - 1) * 6;
@@ -2679,6 +2859,7 @@
         // Reward player for snow carved
         if (snowCarvedThisFrame > 0.01) {
           const subBonus = centerCell.sub === SUB_TIMBER ? 1.35 : centerCell.sub === SUB_COBBLE ? 1.2 : 1.0;
+          if(state.mode==='city')state.city.snow+=snowCarvedThisFrame;
           const areaDelta = snowCarvedThisFrame * 0.95;
           const creditDelta = snowCarvedThisFrame * 1.2 * state.flow * subBonus;
           state.totalAreaCleared += areaDelta;
@@ -2764,7 +2945,7 @@
               const dPlayer = Math.hypot(cwx - state.plow.wx, cwy - state.plow.wy);
               const dCity = Math.hypot(cwx - CITY_X, cwy - CITY_Y);
 
-              if (cell.sub !== SUB_ICE && dCity > CITY_RADIUS + 15 && dPlayer > 85 && (cell.saltedUntil || 0) <= state.elapsed && cell.snow < 1.1) {
+              if (!townProtected(cell.gx,cell.gy) && cell.sub !== SUB_ICE && dCity > CITY_RADIUS + 15 && dPlayer > 85 && (cell.saltedUntil || 0) <= state.elapsed && cell.snow < 1.1) {
                 cell.snow = Math.min(1.1, cell.snow + weather.snowRate * 14 * dt);
               }
             }
@@ -3353,7 +3534,7 @@
           // Whirlwind deposits snow back on cleared terrain (unless salted or inside city)
           const vCell = getCellAtWorld(v.wx, v.wy);
           const dCityV = Math.hypot(v.wx - CITY_X, v.wy - CITY_Y);
-          if (vCell && vCell.sub !== SUB_ICE && dCityV > CITY_RADIUS + 20 && ((vCell.saltedUntil || 0) <= state.elapsed)) {
+          if (vCell && !townProtected(vCell.gx,vCell.gy) && vCell.sub !== SUB_ICE && dCityV > CITY_RADIUS + 20 && ((vCell.saltedUntil || 0) <= state.elapsed)) {
             vCell.snow = Math.min(1.15, vCell.snow + dt * 0.35);
           }
 
@@ -3435,6 +3616,8 @@
 
         // Update chunks & POIs
         updateActiveChunksAndPOIs(dt);
+
+        updateTown(dt);
 
         // Update 3D snow plume particles
         for (let i = state.particles.length - 1; i >= 0; i--) {
@@ -3539,6 +3722,9 @@
 
             const cell = getCellAtGrid(gx, gy);
             drawIsometricCell(cell, scr.x, scr.y, halfW, halfH);
+            if(state.mode==='city' && state.city.tiles[`${gx},${gy}`]==='road'){
+              ctx.strokeStyle='#FBBF24';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(scr.x-halfW*.65,scr.y);ctx.lineTo(scr.x+halfW*.65,scr.y);ctx.stroke();
+            }
           }
         }
 
@@ -3614,6 +3800,11 @@
           });
         });
 
+        if(state.mode==='city')Object.entries(state.city.tiles).forEach(([key,type])=>{
+          if(type==='road')return;const [gx,gy]=key.split(',').map(Number);
+          const wx=(gx+.5)*CELL_SIZE,wy=(gy+.5)*CELL_SIZE;
+          renderables.push({depth:wx+wy,kind:'town_building',data:{wx,wy,type}});
+        });
         // Player Plow
         renderables.push({
           depth: state.plow.wx + state.plow.wy,
@@ -3625,7 +3816,8 @@
 
         // Draw sorted 3D entities
         renderables.forEach((item) => {
-          if (item.kind === 'pine') {
+          if (item.kind === 'town_building') {drawTownBuilding(item.data);
+          } else if (item.kind === 'pine') {
             drawLowPolyPine(item.data);
           } else if (item.kind === 'cabin') {
             drawLowPolyCabin(item.data);
@@ -4746,6 +4938,7 @@
       // 12. HUD & WORKSHOP UI SYNCHRONIZATION
       // =========================================================================
       function syncHUD() {
+        syncTownUI();
         document.getElementById('horn-label').textContent = state.plow.hornCooldown > 0 ? `${Math.ceil(state.plow.hornCooldown)}s` : 'Rescue';
         const effects = [
           ['🏎️ Nitro', state.nitroTimer], ['🧂 Salt', state.saltTimer], ['🛡️ Shield', state.shieldTimer],
@@ -4997,7 +5190,7 @@
           headlightIndex: state.headlightIndex, unlockedHeadlights: state.unlockedHeadlights
         };
         try {
-          await platform.write(JSON.stringify(fresh));
+          await platform.write(JSON.stringify({...fresh,mode:state.mode,profiles:{...progressProfiles,[state.mode]:fresh}}));
           loadProgress();
           chunks.clear();
           Object.assign(state.plow, {wx:0,wy:0,vx:0,vy:0,speed:0,angle:-Math.PI/4,dashTimer:0,dashCooldown:0,pulseCooldown:0,hornRingTimer:0,hornCooldown:0});
@@ -5024,6 +5217,7 @@
       document.getElementById('btn-pause-reset-world').addEventListener('click', () => {
         triggerHaptic(15);
         toggleDedicatedPauseMenu(false);
+        if(state.mode==='city'){showToast('🏙️','Use Start New Career to reset this city. Your city is saved.');return;}
         worldSeed = Math.floor(Math.random() * 900000) + 1000;
         chunks.clear();
         state.plow.wx = 0;
@@ -5312,6 +5506,7 @@
 
       document.getElementById('btn-reset-world').addEventListener('click', () => {
         audio.init();
+        if(state.mode==='city'){showToast('🏙️','Use Start New Career to reset this city. Your city is saved.');return;}
         worldSeed = Math.floor(Math.random() * 900000) + 1000;
         chunks.clear();
         state.plow.wx = 0;
@@ -5329,6 +5524,18 @@
       // =========================================================================
       // 14. MAIN ANIMATION LOOP & BOOTSTRAP
       // =========================================================================
+      document.querySelectorAll('[data-game-mode]').forEach(b=>b.addEventListener('click',()=>switchGameMode(b.dataset.gameMode)));
+      document.getElementById('city-open').addEventListener('click',()=>{resetSteering();document.getElementById('city-panel').hidden=false;syncTownUI();});
+      document.getElementById('city-close').addEventListener('click',()=>document.getElementById('city-panel').hidden=true);
+      document.getElementById('city-cancel').addEventListener('click',()=>{state.city.selected=null;syncTownUI();});
+      for(const [type,def] of Object.entries(TOWN_BUILDINGS)){
+        const b=document.createElement('button');b.type='button';b.dataset.townBuild=type;
+        b.style.cssText='display:block;width:100%;text-align:left;border:1px solid #64748B;border-radius:8px;padding:10px;margin:6px 0;font-size:12px;';
+        b.textContent=`${def.name} · ❄${def.snow} ♨${def.heat} 💧${def.water}`;
+        b.addEventListener('click',()=>{state.city.selected=type;resetSteering();document.getElementById('city-panel').hidden=true;showToast('🏗️','Tap a cleared tile next to the city or a heated road. Open Build to cancel.');});
+        document.getElementById('city-build-buttons').appendChild(b);
+      }
+
       let lastTime = performance.now();
       let hudTick = 0;
 

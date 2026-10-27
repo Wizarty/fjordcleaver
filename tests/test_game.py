@@ -44,7 +44,7 @@ class GameTests(unittest.TestCase):
         source = (ROOT / 'index.html').read_text()
         hook = '''window.gameTest = {state, chunks, keys, updateSimulation, updateActiveChunksAndPOIs,
           getUpgradeCost, buyUpgrade, syncHUD, getCellAtWorld, saveProgress, loadProgress,
-          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse, joystick, getSteeringInput, getMaxSpeed, switchGameMode, buildTownAt, cityStats, updateTown, townProtected, progressSnapshot, worldToScreen};'''
+          performSnowPlowing, recordRescue, triggerHornPing, createChunk, WEATHER_PHASES, renderScene, triggerPlowDash, triggerMeltPulse, joystick, getSteeringInput, getMaxSpeed, switchGameMode, buildTownAt, cityStats, updateTown, townProtected, progressSnapshot, worldToScreen, townBuildReason, townCaps, townNetwork, townGoals, townDistricts, townDeposit, invalidateTown, townPlanning, frameLoop};'''
         source = source.replace('let lastTime = performance.now();', hook + 'let lastTime = performance.now();')
         self.page.route('**/index.html', lambda r: r.fulfill(content_type='text/html', body=source))
         self.page.add_init_script('window.requestAnimationFrame = () => 0;')
@@ -218,7 +218,7 @@ class GameTests(unittest.TestCase):
         self.game()
         self.page.locator('#btn-start-game').click()
         def event(kind, x=700, y=400, pointer=5):
-            self.page.locator('canvas').dispatch_event(kind, {'pointerId': pointer,
+            self.page.locator('#game-canvas').dispatch_event(kind, {'pointerId': pointer,
                 'pointerType': 'touch', 'clientX': x, 'clientY': y, 'button': 0})
         event('pointerdown')
         event('pointermove', 702, 400)
@@ -249,7 +249,7 @@ class GameTests(unittest.TestCase):
         self.page.set_viewport_size({'width': 844, 'height': 390})
         self.page.wait_for_timeout(100)
         self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
-        self.page.locator('canvas').dispatch_event('pointerdown', {'pointerId': 9,
+        self.page.locator('#game-canvas').dispatch_event('pointerdown', {'pointerId': 9,
             'pointerType': 'mouse', 'clientX': 400, 'clientY': 200, 'button': 0})
         self.assertTrue(self.page.evaluate('gameTest.joystick.active'))
         self.assertEqual(self.page.locator('#joystick-zone').evaluate('(e)=>getComputedStyle(e).display'), 'none')
@@ -274,8 +274,8 @@ class GameTests(unittest.TestCase):
     def test_mouse_drag_stops_and_switches_back_from_touch(self):
         self.game()
         self.page.locator('#btn-start-game').click()
-        self.page.locator('canvas').dispatch_event('pointerdown', {'pointerId': 7, 'pointerType': 'touch', 'clientX': 700, 'clientY': 400})
-        self.page.locator('canvas').dispatch_event('pointerup', {'pointerId': 7, 'pointerType': 'touch'})
+        self.page.locator('#game-canvas').dispatch_event('pointerdown', {'pointerId': 7, 'pointerType': 'touch', 'clientX': 700, 'clientY': 400})
+        self.page.locator('#game-canvas').dispatch_event('pointerup', {'pointerId': 7, 'pointerType': 'touch'})
         self.page.mouse.move(700, 400)
         self.page.mouse.down()
         self.page.mouse.move(750, 400)
@@ -432,45 +432,34 @@ class GameTests(unittest.TestCase):
         }''')
         self.assertTrue(all(result.values()),result)
 
-    def test_city_processing_population_and_reachable_completion(self):
+    def test_city_economy_conserves_resources_and_holds_reserve(self):
         self.game()
         result=self.page.evaluate('''async () => {
-          const g=gameTest;await g.switchGameMode('city');
-          const c=g.state.city;
-          c.tiles={'10,0':'boiler','11,0':'water','12,0':'greenhouse','13,0':'home','14,0':'home'};
-          c.snow=100;c.water=20;c.food=2;
-          g.updateTown(1);
-          const processing=c.snow<100 && c.heat>12 && c.water>20 && c.population>0;
-          const notPremature=!c.completed;
-          c.tiles['15,0']='climate';c.population=6;
-          for(let y=-24;y<24;y++)for(let x=-24;x<24;x++){
-            const cell=g.getCellAtWorld(x*26+13,y*26+13);cell.snow=0;cell.berm=0;
-          }
-          g.updateTown(1);const complete=c.completed && g.cityStats().cleared===2304;
+          const g=gameTest;await g.switchGameMode('city');const c=g.state.city;
+          c.tiles={'4,0':'boiler'};g.invalidateTown();
+          Object.assign(c,{snow:100,heat:30,water:12,population:0});
+          g.updateTown(60);
+          const recipe=Math.abs(c.snow-96)<.001 && Math.abs(c.heat-38)<.001 && Math.abs(c.water-14)<.001;
+          c.snow=31;c.heat=30;g.updateTown(120);const reserve=Math.abs(c.snow-30)<.001;
+          c.snow=100;c.heat=g.townCaps().heat;g.updateTown(60);const full=c.snow===100;
+          c.snow=0;g.updateTown(120);const recovery=c.snow>1.9;
+          c.tiles={'20,20':'collector'};g.invalidateTown();c.snow=100;g.updateTown(60);const disconnected=c.snow===100;
+          c.tiles={'4,0':'collector'};g.invalidateTown();g.updateTown(60);const renewable=Math.abs(c.snow-106)<.001;
+          c.snow=g.townCaps().snow;g.updateTown(600);const capped=c.snow===g.townCaps().snow;
           g.state.plow.wx=9999;g.state.plow.wy=-9999;g.updateTown(.1);
-          return {processing,notPremature,complete,protected:g.townProtected(20,20),bounded:Math.abs(g.state.plow.wx)<624&&Math.abs(g.state.plow.wy)<624};
+          return {recipe,reserve,full,recovery,disconnected,renewable,capped,bounded:Math.abs(g.state.plow.wx)<624&&Math.abs(g.state.plow.wy)<624};
         }''')
         self.assertTrue(all(result.values()),result)
 
-    def test_city_can_be_finished_using_only_harvested_snow(self):
+    def test_city_campaign_completes_without_resource_grants(self):
         self.game()
-        result=self.page.evaluate('''async () => {
-          const g=gameTest;await g.switchGameMode('city');
-          // Exercise the actual harvesting ability, without granting resources.
-          for(let y=-23;y<=25;y+=4)for(let x=-23;x<=25;x+=4){
-            g.state.plow.wx=(Math.min(x,23)+.5)*26;g.state.plow.wy=(Math.min(y,23)+.5)*26;
-            g.state.plow.pulseCooldown=0;g.triggerMeltPulse();
-          }
-          const cleared=g.cityStats().cleared;
-          const roads=[];for(let x=4;x<=10;x++)roads.push(g.buildTownAt(x,0,'road'));
-          const furnace=g.buildTownAt(4,1,'boiler');g.updateTown(400);
-          const buildings=[g.buildTownAt(5,1,'water'),g.buildTownAt(6,1,'greenhouse'),
-            g.buildTownAt(7,1,'home'),g.buildTownAt(8,1,'home'),g.buildTownAt(9,1,'climate'),g.buildTownAt(10,1,'geothermal')];
-          g.updateTown(120);
-          return {cleared,roads:roads.every(Boolean),furnace,buildings:buildings.every(Boolean),completed:g.state.city.completed};
-        }''')
+        result=self.page.evaluate((ROOT/'tests/city_campaign.js').read_text())
+        self.assertTrue(result['completed'],result)
         self.assertEqual(result['cleared'],2304)
-        self.assertTrue(all(result[k] for k in ['roads','furnace','buildings','completed']),result)
+        self.assertGreaterEqual(result['population'],40)
+        self.assertGreater(result['minutes'],15)
+        self.assertLess(result['minutes'],90)
+        self.assertTrue(all(value>=0 for value in result['stock'].values()),result)
 
     def test_mobile_city_menu_and_canvas_placement(self):
         self.page.set_viewport_size({'width':390,'height':844})
@@ -480,11 +469,92 @@ class GameTests(unittest.TestCase):
         self.page.locator('#btn-start-game').click()
         self.page.evaluate('gameTest.getCellAtWorld(117,13).snow=0;gameTest.renderScene(.016)')
         self.page.locator('#city-open').click()
+        self.page.locator('[data-city-tab="build"]').click()
         self.page.locator('[data-town-build="road"]').click()
         position=self.page.evaluate('gameTest.worldToScreen(117,13)')
         self.page.mouse.click(position['x'],position['y'])
+        self.assertIsNone(self.page.evaluate("gameTest.state.city.tiles['4,0']"))
+        self.page.locator('#city-confirm').click()
         self.assertEqual(self.page.evaluate("gameTest.state.city.tiles['4,0']"),'road')
         self.assertFalse(self.page.evaluate('gameTest.joystick.active'))
+
+    def test_city_districts_network_and_dismantling(self):
+        self.game()
+        result=self.page.evaluate('''async()=>{
+          const g=gameTest;await g.switchGameMode('city');const c=g.state.city;
+          Object.assign(c,{snow:1000,heat:1000,water:1000,stage:1});
+          for(let x=4;x<=12;x++){const cell=g.getCellAtWorld(x*26+13,13);cell.snow=0;g.buildTownAt(x,0,'road');}
+          for(let y=1;y<12;y++){g.getCellAtWorld(325,y*26+13).snow=0;g.buildTownAt(12,y,'road');}
+          const relayLocked=!!g.townBuildReason(12,12,'relay');
+          for(let y=8;y<=16;y++)for(let x=8;x<=16;x++){const cell=g.getCellAtWorld(x*26+13,y*26+13);cell.snow=cell.berm=0;}
+          const relay=g.buildTownAt(12,12,'relay'),protectedDistrict=g.townProtected(16,16)&&!g.townProtected(17,17);
+          const before=c.snow,blocked=!g.buildTownAt(8,0,'demolish')&&c.snow===before;
+          const dismantled=g.buildTownAt(12,12,'demolish')&&!g.townProtected(16,16);
+          const retry=g.buildTownAt(12,12,'relay');
+          // Disconnected branches do not bypass the road rule.
+          c.tiles['20,20']='road';g.invalidateTown();g.getCellAtWorld(21*26+13,20*26+13).snow=0;
+          const island=!g.buildTownAt(21,20,'home');
+          return {relayLocked,relay,protectedDistrict,blocked,dismantled,retry,island};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_city_legacy_migration_and_chapter_save(self):
+        self.game()
+        result=self.page.evaluate('''async()=>{
+          const g=gameTest;await g.switchGameMode('city');
+          Object.assign(g.state.city,{snow:999,heat:777,stage:2,reserve:60,tiles:{'4,0':'geothermal'}});
+          g.invalidateTown();g.saveProgress();g.loadProgress();
+          const persisted=g.state.city.stage===2&&g.state.city.reserve===60&&g.state.city.tiles['4,0']==='geothermal';
+          g.updateTown(1);const legacyStock=g.state.city.snow===999&&g.state.city.heat===777;
+          g.state.city.version=undefined;g.state.city.stage=undefined;g.saveProgress();g.loadProgress();
+          return {persisted,legacyStock,migrated:g.state.city.stage===1&&g.state.city.snow===999};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_city_growth_requires_services_and_network_capacity(self):
+        self.game()
+        result=self.page.evaluate('''async()=>{
+          const g=gameTest;await g.switchGameMode('city');const c=g.state.city;
+          c.tiles={'4,0':'home'};g.invalidateTown();Object.assign(c,{population:4,water:0,food:0});
+          g.updateTown(60);const noGrowth=c.population===4&&c.service.includes('paused');
+          Object.assign(c,{water:20,food:20});g.updateTown(60);const growth=Math.abs(c.population-4.72)<.001;
+          // Six homes consume the initial 12 units of heat-network capacity.
+          c.tiles={'4,0':'home','-5,0':'home','0,4':'home','0,-5':'home','3,2':'home','2,3':'home'};g.invalidateTown();
+          Object.assign(c,{snow:500,heat:100,water:100});g.getCellAtWorld(4*26+13,39).snow=0;
+          const full=g.townBuildReason(4,1,'home').includes('network full');
+          const source=g.buildTownAt(4,1,'boiler');
+          return {noGrowth,growth,full,source};
+        }''')
+        self.assertTrue(all(result.values()),result)
+
+    def test_city_planner_fits_small_screens_and_pauses_controls(self):
+        self.game()
+        self.page.evaluate("gameTest.switchGameMode('city')")
+        self.page.locator('#btn-start-game').click()
+        for width,height in [(320,480),(390,844),(844,390),(1280,900)]:
+            self.page.set_viewport_size({'width':width,'height':height})
+            self.page.locator('#city-open').click()
+            self.assertTrue(self.page.evaluate('gameTest.townPlanning()'))
+            self.assertTrue(self.page.evaluate('''()=>{const g=gameTest,before=g.state.elapsed;
+              g.frameLoop(performance.now()+50);return g.state.elapsed===before;}'''))
+            panel=self.page.locator('#city-panel').bounding_box()
+            self.assertGreaterEqual(panel['x'],0)
+            self.assertGreaterEqual(panel['y'],0)
+            self.assertLessEqual(panel['x']+panel['width'],width)
+            self.assertLessEqual(panel['y']+panel['height'],height)
+            self.page.locator('[data-city-tab="economy"]').click()
+            self.page.locator('#city-reserve').select_option('60')
+            self.assertEqual(self.page.evaluate('gameTest.state.city.reserve'),60)
+            self.page.keyboard.press('Escape')
+            self.assertFalse(self.page.evaluate('gameTest.townPlanning() || gameTest.state.paused'))
+        self.page.locator('#city-open').click()
+        self.page.locator('[data-city-tab="build"]').click()
+        self.assertTrue(self.page.locator('[data-town-build="climate"]').is_disabled())
+        self.page.locator('[data-town-build="road"]').click()
+        self.page.keyboard.press('Space')
+        self.assertEqual(self.page.evaluate('gameTest.state.plow.dashTimer'),0)
+        self.page.locator('#city-cancel').click()
+        self.assertFalse(self.page.evaluate('gameTest.townPlanning()'))
 
     def test_city_ping_locates_the_last_snow_patch(self):
         self.game()

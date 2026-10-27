@@ -44,6 +44,7 @@ The HTML includes compiled Tailwind 3.4.17 styles and runs without a CDN. All ga
 ```sh
 python3 -m unittest discover -s tests -v
 python3 tests/benchmark_career.py
+python3 tests/benchmark_city.py
 ```
 
 The benchmark accelerates gameplay logic without drawing, automatically buys affordable upgrades and uses abilities. It prunes distant test terrain to bound memory; it does not measure rendering performance or guarantee the same completion time for every route.
@@ -72,20 +73,14 @@ Current official requirements and the real SDK/Test Suite could not be accessed 
 - **Dash** provides a 0.8-second forward thrust (previously 0.52 seconds), with the existing cooldown.
 - **Rescue Ping (H)** marks the closest in-range stranded target for 12 seconds, prioritizing blocked evacuees. A blue SOS marker and direction line work even when the general radar is disabled. Nearby evacuees immediately thaw, recalculate their route, gain +50% movement speed on cleared roads and cannot be frozen by vortices for 8 seconds. It does not let them travel through snow. Siren upgrades extend range/duration and shorten its 8-second cooldown. The button displays remaining cooldown.
 
-## Map modes: Arcade and Snow City
+## Map modes: Arcade and Thermal Cooperative
 
-Choose **Arcade · Endless** or **Snow City · Build & restore** in the welcome screen or pause menu. Each mode has its own upgrades, credits and progress; existing saves migrate into Arcade. Switching modes saves the current profile before loading the other one.
+Choose **Arcade · Endless** or **Snow City · Build & restore** in the welcome screen or pause menu. Each mode has its own progress; existing Arcade and city saves are retained.
 
-Snow City is a finite 48×48-tile island with persistent terrain and construction. Open **Build**, select a structure and tap a cleared tile adjoining the refuge or a connected heated road. Reopen Build and choose **Cancel placement / Drive** to resume steering. Buildings require snow stock, heat and sometimes water; exact costs are displayed before placement. Terrain must be clear and occupied tiles cannot be replaced.
+Snow City is now a four-chapter **Thermal Cooperative** campaign. Open **Plan & build** for the current objectives. The finite 48×48 valley has four surveyed outer districts: extend heated roads to them, clear at least 69/81 district tiles, then commission each relay. Connected relays protect their districts from new drifts. Chapter goals unlock new buildings and improve the plow's engine, blade and Melt. Finish with 40 residents, four restored districts, a climate hub and all 2,304 tiles clear.
 
-- **Heated road:** embedded waste-heat pipes melt snowfall immediately. Extend a connected road network to grow the city.
-- **Snow furnace:** processes collected snow into usable heat and water.
-- **Waterworks:** turns snow into a larger supply of water for the settlement.
-- **Geothermal plant:** provides renewable heat and melts nearby snow into the resource stock.
-- **Greenhouse:** uses water to produce food.
-- **Eco housing:** adds space for ten residents; population grows when food is available.
-- **Climate hub:** unlocks after a furnace, waterworks, greenhouse and two homes. The valley's heat network prevents new snowfall from accumulating, allowing final cleanup.
+The **Build** catalogue explains costs, production, heat-network load and unlocks. Select a building, tap cleared land beside the refuge or a connected road, inspect the footprint, then **Confirm**. **Cancel / Drive** resumes steering. Planning and placement pause simulation. **Dismantle** recovers 50% of materials within storage limits and prevents breaking dependent connections. The planner is a desktop side panel or a mobile bottom sheet. The valley map and district buttons set navigation waypoints; **Survey** finds remaining snow.
 
-The goal is to clear all **2,304 tiles**, build the climate hub and settle at least six residents. Completing the goal does not stop further building. Snow harvested with the plow, Melt and salt becomes city stock; actual harvesting, production and construction are covered by an end-to-end completion test without free resource grants. The existing Arcade campaign retains its progression and mechanics.
+The **Economy** tab shows stocks, storage limits, recent net rates, network capacity and production status. Exchangers recover refrigeration waste heat using snow as a cooling medium; waterworks and greenhouses supply the residents. Geothermal energy powers a buried road-heating loop. Depots expand storage; an adjustable snow reserve protects construction stock. Cloud collectors replenish snow even after terrain is clear. The refuge offers a small emergency supply so early overspending remains recoverable. Missing food/water pauses immigration; residents do not die. Full storage stops the relevant processing chain.
 
-In Snow City, **Ping** surveys the finite map and marks the nearest remaining patch of snow, making the last tiles easier to find.
+See [the concept and balancing specification](docs/SNOW_CITY_DESIGN.md) for recipes, capacity and progression. The automated [campaign scenario](tests/city_campaign.js) uses actual harvesting, construction and production without resource grants or forced unlocks; its ideal economy baseline is about **46 simulated minutes**, excluding travel, weather and rendering. Real completion time depends on decisions and route. Arcade keeps its separate 3–4 hour upgrade economy.
